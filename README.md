@@ -1,3 +1,10 @@
+## 安装依赖项
+
+```
+pip install -r requirements.txt
+npm install
+```
+
 ## `crawler.js`
 
 抓取网页并保存到 HTML
