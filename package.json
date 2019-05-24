@@ -8,9 +8,9 @@
   },
   "author": "",
   "license": "",
-  dependencies: {
-        "cheerio": "*",
-        "sync-request": "*",
-        "to-markdown": "*"
+  "dependencies": {
+    "cheerio": "*",
+    "sync-request": "*",
+    "to-markdown": "*"
   }
 }
