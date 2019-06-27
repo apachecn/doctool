@@ -3,6 +3,8 @@
 ```
 pip install -r requirements.txt
 npm install
+apt install imagemagick
+apt install pngquant
 ```
 
 ## `epub-crawler.js`
