@@ -5,17 +5,19 @@ pip install -r requirements.txt
 npm install
 ```
 
-## `crawler.js`
+## `epub-crawler.js`
 
-抓取网页并保存到 HTML
+抓取网页和图片并保存 EPUB，解压后可以得到图片和 HTML。
+
+需要 ImageMagick 和 pngquant。包依赖见文件开头。
 
 ```
-node crawler
+node epub-crawler
 ```
 
 ### 配置文件`config.json`：
 
-+   `fname`：保存的文件名称
++   `name`：保存的文件名称
 +   `url`：目录页 URL
 +   `link`：链接`<a>`的选择器
 +   `base`：链接`<a>`的前缀
@@ -28,9 +30,13 @@ node crawler
 +   `hdrs`：HTTP 请求的协议头
 +   `list`：如果这个列表不为空，则抓取这个列表，忽略`url`
 
-> 注意
-> 
-> 图片的相对链接需要手动处理
+## `img-better.js`
+
+自动压缩图片。需要 ImageMagick 和 pngquant。
+
+```
+node img-better <dir>
+```
 
 ## `split.js`
 
