@@ -1,45 +1,89 @@
+/*
+npm install sync-request
+npm install cheerio
+npm install gen-epub@git+https://github.com/258ch/gen-epub
+需要 Image Magick 和 pngquant
+*/
+
 var cheerio = require('cheerio');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 var req = require('sync-request');
 var fs = require('fs');
+var {URL} = require('url')
+var genEpub = require('gen-epub')
+var crypto = require('crypto');
+var betterImg = require('./img-better.js')
 
 var config = JSON.parse(fs.readFileSync('config.json', 'utf-8'))
 
 function main() {
     
-    var ofile = fs.openSync(config.fname, 'a');
     var toc = getTocFromCfg()
+    
+    var articles = []
+    var imgs = new Map()
 
-    var start = 0;
-    if(fs.existsSync('out.idx')) {
-        start = fs.readFileSync('out.idx')
-        start = Number.parseInt(start) + 1
-    }
-
-    for(var i = start; i< toc.length; i++) {
+    for(var i = 0; i< toc.length; i++) {
         try {
             var url = toc[i];
             console.log('page: ' + url);
             
-            
             if(url.startsWith('http')) {
-                html = request(url);
-                var content = getContent(html, url);
-                fs.writeSync(ofile, '\n<!--split-->\n');
-                fs.writeSync(ofile, content);
+                var html = request(url).body.toString();
+                var res = getContent(html, url);
+                res.content = processImg(res.content, url, imgs)
+                articles.push(res)
             }
             else 
-                fs.writeSync(ofile, `\n<!--split-->\n<h1>${url}</h1>`);
+                articles.push({title: url, content: ''})
             
-            fs.writeFileSync('out.idx', i.toString())
         } catch(ex) {
             console.log(ex);
             i--;
         }
     }
+    
+    if(config.name) {
+        articles.splice(0, 0, {
+            title: config.name, 
+            content: `<p>来源：<a href='${config.url}'>${config.url}</a></p>`
+        })
+    }
+    
+    genEpub(articles, imgs)
 
-    fs.closeSync(ofile);
     console.log('Done..');
+}
+
+function processImg(html, pageUrl, imgs) {
+    
+    var $ = cheerio.load(html);
+    
+    var $imgs = $('img');
+
+    for(var i = 0; i < $imgs.length; i++) {
+        
+        try {
+            var $img = $imgs.eq(i);
+            var url = $img.attr('src');
+            if(!url.startsWith('http'))
+                url = new URL(url, pageUrl).toString()
+            
+            var picname = crypto.createHash('md5').update(url).digest('hex') + ".jpg";
+            console.log(`pic: ${url} => ${picname}`)
+            
+            if(!imgs.has(picname)) {
+                var data = request(url).getBody();
+                data = betterImg(data)
+                imgs.set(picname, data);
+            }
+            
+            $img.attr('src', '../Images/' + picname);
+        } catch(ex) {console.log(ex.toString())}
+    }
+    
+    return $.html();
+
 }
 
 function getTocFromCfg() {
@@ -52,7 +96,7 @@ function getTocFromCfg() {
         process.exit()
     }
     
-    var html = request(config.url);
+    var html = request(config.url).body.toString();
     var toc = getToc(html);
     return toc;
     
@@ -60,6 +104,7 @@ function getTocFromCfg() {
 
 function getToc(html)  {
         
+    var domain = new URL(config.url).hostname
     var $ = cheerio.load(html);
     
     if(config.remove)
@@ -78,7 +123,7 @@ function getToc(html)  {
             continue
         }
         if(!url.includes('#'))
-            res.push(config.base + url)
+            res.push(new URL(url, config.base).toString())
 
     }
     return res;
@@ -95,22 +140,27 @@ function getContent(html, url) {
     if(config.remove)
         $(config.remove).remove()
     
-    var title = ''
-    if(config.title)
-        title = '<h1>' + $(config.title).text() + '</h1>'
-        
+    var title = $(config.title).text()
+    $(config.title).remove()
     var co = $(config.content).html()
-    var credit = `<blockquote>原文：<a href='${url}'>${url}</a></blockquote>`
+
+    if(config.credit) {
+        var credit = `<blockquote>原文：<a href='${url}'>${url}</a></blockquote>`
+        co = credit + co
+    }
     
-    if(config.credit)
-        return title + credit + co;
-    else
-        return title + co;
+    return {title: title, content: co}
 }
 
-function request(url) {
+function request(url, n=config.n_retry) {
 
-    return req('GET', url, {headers: config.hdrs}).getBody().toString();
+    for(var i = 0; i < n; i++) {
+        try {
+            return req('GET', url, {headers: config.hdrs})
+        } catch(ex) {
+            if(i == n - 1) throw ex;
+        }
+    }
 
 }
 
