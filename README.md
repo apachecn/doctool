@@ -38,14 +38,6 @@ node epub-crawler
 node img-better <dir>
 ```
 
-## `split.js`
-
-将抓取的 HTML 的章节分割成单独的文件
-
-```
-node split <file>
-```
-
 ## `img.js`
 
 保存 HTML 中的图片到同目录的`img`中，并更新 HTML 中的链接。
@@ -80,4 +72,12 @@ RuleObj {
 }
 
 module.exports: Array[RuleObj]
+```
+
+## `sina-short.js`
+
+将 MD 中的链接转换为新浪短网址。
+
+```
+node sina-short <file>
 ```

@@ -2,7 +2,7 @@
   "name": "doctool",
   "version": "1.0.0",
   "description": "",
-  "main": "crawler.js",
+  "main": "epub-crawler.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,6 +11,7 @@
   "dependencies": {
     "cheerio": "*",
     "sync-request": "*",
-    "to-markdown": "*"
+    "to-markdown": "*",
+    "gen-epub": "git+https://github.com/258ch/gen-epub"
   }
 }
