@@ -1,4 +1,7 @@
-// 需要 Image Magick 和 pngquant
+/*
+apt install imagemagick
+apt install pngquant
+*/
 
 var chp = require('child_process')
 var fs = require('fs')

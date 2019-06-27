@@ -2,7 +2,8 @@
 npm install sync-request
 npm install cheerio
 npm install gen-epub@git+https://github.com/258ch/gen-epub
-需要 Image Magick 和 pngquant
+apt install imagemagick
+apt install pngquant
 */
 
 var cheerio = require('cheerio');
