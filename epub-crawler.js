@@ -122,8 +122,11 @@ function getToc(html)  {
             res.push(text)
             continue
         }
-        if(!url.includes('#'))
-            res.push(new URL(url, config.base).toString())
+        if(!url.includes('#')) {
+            if(config.base)
+                url = new URL(url, config.base).toString()
+            res.push(url)
+        }
 
     }
     return res;
