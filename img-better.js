@@ -8,9 +8,9 @@ var fs = require('fs')
 var path = require('path')
 var os = require('os')
 
-function betterImg(img) {
+function betterImg(img, tmpDir) {
     
-    var tmpDir = os.tmpdir()
+    tmpDir = tmpDir || os.tmpdir()
     var fname = new Date().getTime().toString() + '.jpg'
     fname = path.join(tmpDir, fname)
     fs.writeFileSync(fname, img)
