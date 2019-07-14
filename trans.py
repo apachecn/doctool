@@ -71,7 +71,7 @@ def tags_preprocess(html):
         i += 1
         return tag
         
-    html = re.sub(r'<code[^>]*?>[^<]*?</code>', replace_code, html)
+    html = re.sub(r'<code[^>]*?>[\s\S]*?</code>', replace_code, html)
     
     # 移除其它标签
     tags = []
