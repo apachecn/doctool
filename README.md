@@ -83,3 +83,11 @@ module.exports: Array[RuleObj]
 ```
 node sina-short <file>
 ```
+
+## `process_tex.js`
+
+将 MD/HTML 中的 TeX 公式转换为图片。
+
+```
+node process_tex <dir>
+```
