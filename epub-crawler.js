@@ -2,6 +2,7 @@
 npm install sync-request
 npm install cheerio
 npm install gen-epub@git+https://github.com/258ch/gen-epub
+npm install iconv-lite
 apt install imagemagick
 apt install pngquant
 */
@@ -14,6 +15,7 @@ var {URL} = require('url')
 var genEpub = require('gen-epub')
 var crypto = require('crypto');
 var betterImg = require('./img-better.js')
+var iconv = require('iconv-lite')
 
 var config = JSON.parse(fs.readFileSync('config.json', 'utf-8'))
 
@@ -30,7 +32,7 @@ function main() {
             console.log('page: ' + url);
             
             if(url.startsWith('http')) {
-                var html = request(url).body.toString();
+                var html = iconv.decode(request(url).body, config.encoding);
                 var res = getContent(html, url);
                 res.content = processImg(res.content, url, imgs)
                 articles.push(res)
@@ -97,7 +99,7 @@ function getTocFromCfg() {
         process.exit()
     }
     
-    var html = request(config.url).body.toString();
+    var html = iconv.decode(request(config.url).body, config.encoding)
     var toc = getToc(html);
     return toc;
     
