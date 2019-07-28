@@ -107,13 +107,13 @@ function getTocFromCfg() {
 
 function getToc(html)  {
         
-    var domain = new URL(config.url).hostname
     var $ = cheerio.load(html);
     
     if(config.remove)
         $(config.remove).remove()
     
     var $list = $(config.link);
+    var vis = new Set()
 
     var res = [];
     for(var i = 0; i < $list.length; i++)
@@ -125,12 +125,13 @@ function getToc(html)  {
             res.push(text)
             continue
         }
-        if(!url.includes('#')) {
-            if(config.base)
-                url = new URL(url, config.base).toString()
-            res.push(url)
-        }
-
+        
+        url = url.replace(/#.*$/, '')
+        if(config.base)
+            url = new URL(url, config.base).toString()
+        if(vis.has(url)) continue
+        vis.add(url)
+        res.push(url)
     }
     return res;
 }
