@@ -147,8 +147,8 @@ function getContent(html, url) {
     if(config.remove)
         $(config.remove).remove()
     
-    var title = $(config.title).text()
-    $(config.title).remove()
+    var title = $(config.title).eq(0).text()
+    $(config.title).eq(0).remove()
     var co = $(config.content).html()
 
     if(config.credit) {
