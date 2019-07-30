@@ -8,8 +8,8 @@ var imgRelDir = 'img'
 function processTex(html, imgDir, isMD=false) {
     
     var rm;
-    while(rm = /\\\((.+?)\\\)|\\\[([\s\S]+?)\\\]/g.exec(html)){
-        var tex = rm[1] || rm[2]
+    while(rm = /\\\((.+?)\\\)|\\\[([\s\S]+?)\\\]|\$\$?([\s\S]+?)\$\$?/g.exec(html)){
+        var tex = rm[1] || rm[2] || rm[3]
 
         var url = 'http://latex.codecogs.com/gif.latex?'
             + encodeURIComponent(tex)
