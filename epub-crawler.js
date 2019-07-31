@@ -147,9 +147,17 @@ function getContent(html, url) {
     if(config.remove)
         $(config.remove).remove()
     
-    var title = $(config.title).eq(0).text()
-    $(config.title).eq(0).remove()
-    var co = $(config.content).html()
+    // 只取一个元素
+    var $title = $(config.title).eq(0)
+    var title = $title.text()
+    $title.remove()
+    
+    // 解决 Cheerio 的 .html 多播问题
+    var $co = $(config.content)
+    var co = []
+    for(var i = 0; i < $co.length; i++)
+        co.push($co.eq(i).html())
+    co = co.join('\r\n')
 
     if(config.credit) {
         var credit = `<blockquote>原文：<a href='${url}'>${url}</a></blockquote>`
