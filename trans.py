@@ -12,6 +12,10 @@ import json
 from urllib.parse import quote
 from argparse import ArgumentParser
 
+RE_CODE = r'<(pre|code)[^>]*?>[\s\S]*?</\1>'
+RE_TAG = r'<[^>]*?>'
+RE_ENTITY = r'&(\w+|#x?\d+);'
+
 parser = ArgumentParser()
 parser.add_argument('--proxy')
 parser.add_argument('--wait-sec', type=float, default=0.5)
@@ -21,7 +25,6 @@ if args.proxy:
     args.proxy = {'http': p, 'https': p}
 
 trans = Translator(['translate.google.cn'], proxies=args.proxy)
-
 
 def set_inner_html(elem, html):
     body = bs('<body>' + html + '</body>', 'lxml').body
@@ -38,42 +41,33 @@ def tags_preprocess(html):
     html = re.sub(r'</body>.*?</html>', '', html, flags=re.RegexFlag.DOTALL)
     '''
     
-    tokens = []
+    tags = []
     idx = 0
     
+    def replace_func(m):
+        nonlocal idx
+        s = m.group()
+        tags.append(s)
+        tk = f' [HTG{idx}] '
+        idx += 1
+        return tk
+        
     # 移除 <pre|code>
-    def replace_code(m):
-        nonlocal idx
-        s = m.group()
-        tokens.append(s)
-        tag = f' [HTG{idx}] '
-        idx += 1
-        return tag
-        
-    html = re.sub(r'<(pre|code)[^>]*?>[\s\S]*?</\1>', replace_code, html)
-    
-    
+    html = re.sub(RE_CODE, replace_func, html)
     # 移除其它标签
-    
-    def replace_tag(m):
-        nonlocal idx
-        s = m.group()
-        tokens.append(s)
-        tag = f' [HTG{idx}] '
-        idx += 1
-        return tag
-        
-    html = re.sub(r'<[^>]*?>', replace_tag, html)
+    html = re.sub(RE_TAG, replace_func, html)
+    # 移除实体
+    html = re.sub(RE_ENTITY, replace_func, html)
     
     # 去掉 Unix 和 Windows 换行
     html = html.replace('\n', ' ')
     html = html.replace('\r', '')
-    return html, tokens
+    return html, tags
 
-def tags_recover(html, tokens):
+def tags_recover(html, tags):
 
     # 还原标签
-    for i, t in enumerate(tokens):
+    for i, t in enumerate(tags):
         html = html.replace(f'[HTG{i}]', t)
         
     return html
