@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import re
-from googletrans import Translator
+# from googletrans import Translator
 import time
 import sys
 import os
@@ -11,6 +11,8 @@ import hashlib
 import json
 from urllib.parse import quote
 from argparse import ArgumentParser
+import gotk
+import urllib
 
 RE_CODE = r'<(pre|code)[^>]*?>[\s\S]*?</\1>'
 RE_TAG = r'<[^>]*?>'
@@ -24,7 +26,17 @@ if args.proxy:
     p = args.proxy
     args.proxy = {'http': p, 'https': p}
 
-trans = Translator(['translate.google.cn'], proxies=args.proxy)
+# trans = Translator(['translate.google.cn'], proxies=args.proxy)
+
+def google_trans(s):
+    tk = gotk.tk(s)
+    url = 'https://translate.google.cn/translate_a/single?' + \
+          f'client=webapp&sl=en&tl=zh-CN&dt=t&tk={tk}' + \
+          f'&q={urllib.parse.quote(s)}'
+    res = requests.get(url, proxies=args.proxy).text
+    j = json.loads(res)
+    trans = ' '.join([o[0] for o in j[0]])
+    return trans
 
 def set_inner_html(elem, html):
     body = bs('<body>' + html + '</body>', 'lxml').body
@@ -79,8 +91,8 @@ def trans_real(html):
     while not translated:
         try:
             print(html)
-            html = trans.translate(html, dest='zh-cn', src='en').text
-            # html = baidu_trans(html)
+            html = google_trans(html)
+            print(html)
             translated = True
             time.sleep(args.wait_sec)
         except Exception as ex:
