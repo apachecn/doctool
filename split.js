@@ -1,14 +1,25 @@
 var fs = require('fs');
+var path = require('path');
 var process = require('process');
 
-try {fs.mkdirSync('out');}
-catch(ex){}
+function safeMkdir(p) {
+    try {fs.mkdirSync(p);}
+    catch(ex){}
+}
 
-var co = fs.readFileSync(process.argv[2], 'utf-8');
+function getWidth(i) {
+    return i == 0? 1: Math.trunc(Math.log10(i)) + 1
+}
 
-var files = co.split(/<!\-\-split\-\->/g);
+var fname = process.argv[2]
+var dir = path.dirname(fname)
+safeMkdir(path.join(dir, 'out'))
+var co = fs.readFileSync(fname, 'utf-8');
+var cos = co.split(/<!\-\-split\-\->/g);
+var maxWid = getWidth(cos.length - 1)
 
-for(var i = 0; i < files.length; i++)
+for(var [i, co] of cos.entries())
 {
-	fs.writeFileSync('out/' + i + '.html', files[i], {encoding: 'utf-8'});
+    var fname = i.toString().padStart(maxWid, '0') + '.html'
+    fs.writeFileSync(path.join(dir, 'out', fname), cos[i]);
 }
