@@ -1,9 +1,10 @@
 var fs = require('fs');
+var process = require('process');
 
 try {fs.mkdirSync('out');}
 catch(ex){}
 
-var co = fs.readFileSync('out.html', 'utf-8');
+var co = fs.readFileSync(process.argv[2], 'utf-8');
 
 var files = co.split(/<!\-\-split\-\->/g);
 
