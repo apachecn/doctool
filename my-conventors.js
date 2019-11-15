@@ -119,7 +119,7 @@ module.exports = [
     filter: function (node) {
       return node.nodeName === 'A' && !node.getAttribute('href');
     },
-    replacement: function(content) { return ''; }
+    replacement: function(content) { return content; }
   },
   
   // Fenced code blocks
