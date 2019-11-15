@@ -42,7 +42,8 @@ function main() {
     var pics = fs.readdirSync(dir).filter(
         x => x.endsWith('.jpg') || 
              x.endsWith('.png') || 
-             x.endsWith('.gif')
+             x.endsWith('.gif') || 
+             x.endsWith('.jpeg')
     )
 
     for(var f of pics){
