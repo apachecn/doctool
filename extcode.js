@@ -35,7 +35,7 @@ function extractFile(fname) {
     var co = fs.readFileSync(fname, 'utf-8')
     
     var pres = []
-    co = co.replace(/```\w*$[\s\S]+?^```/mg, s => {
+    co = co.replace(/```\w*$[\s\S]+?^\x20*```/mg, s => {
         pres.push(s)
         var idx = pres.length - 1
         return `[PRE${idx}]`
