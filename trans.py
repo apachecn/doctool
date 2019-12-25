@@ -37,14 +37,12 @@ def tags_preprocess(html):
     '''
     
     tags = []
-    idx = 0
     
     def replace_func(m):
-        nonlocal idx
         s = m.group()
         tags.append(s)
+        idx = len(tags) - 1
         tk = f' [HTG{idx}] '
-        idx += 1
         return tk
         
     # 移除 <pre|code>
