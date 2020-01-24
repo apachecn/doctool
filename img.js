@@ -4,8 +4,9 @@ var request = require('sync-request');
 var crypto = require('crypto');
 var cheerio = require('cheerio');
 var path = require('path')
+var betterImg = require('./img-better.js')
 
-//var headers = {'Referer': 'https://blog.csdn.net/red_stone1/article/details/77278707'}
+
 var headers = {}
 var imgs = new Set();
 
@@ -67,10 +68,11 @@ function processHtml(html, dir) {
                 continue;
             
             var picname = crypto.createHash('md5').update(url).digest('hex') + ".jpg";
-            console.log(picname)
+            console.log(`pic: ${url} => ${picname}`)
             
             if(!imgs.has(picname)) {
                 var data = request('GET', url, {headers: headers}).getBody();
+                data = betterImg(data)
                 fs.writeFileSync(path.join(dir, 'img', picname), data);
                 imgs.add(picname);
             }
