@@ -6,9 +6,7 @@ var cheerio = require('cheerio');
 var path = require('path')
 var betterImg = require('./img-better.js')
 
-
-var headers = {}
-var imgs = new Set();
+var config = JSON.parse(fs.readFileSync('config.json', 'utf-8'))
 
 var isDir = s => fs.statSync(s).isDirectory()
 
@@ -29,8 +27,7 @@ function main() {
         mkdirSyncSafe(path.join(fname, 'img'))
         processDir(fname)
     } else {
-        var dir = path.dirname(fname)
-        mkdirSyncSafe(path.join(dir, 'img'))
+        mkdirSyncSafe(path.join(path.dirname(fname), 'img'))
         processFile(fname)
     }
 }
@@ -47,41 +44,65 @@ function processFile(fname) {
     if(!fname.endsWith('.html'))
         return;
     console.log('file: ' + fname);
-    var dir = path.dirname(fname)
     var content = fs.readFileSync(fname, 'utf-8');
-    content = processHtml(content, dir);
+    var imgs = new Map()
+    content = processImg(content, imgs);
     fs.writeFileSync(fname, content);
+    var dir = path.dirname(fname)
+    for(var [fname, img] of imgs.entries()) {
+        fs.writeFileSync(path.join(dir, 'img', fname), img)
+    }
 }
 
-function processHtml(html, dir) {
+function httpGetRetry(url, n=config.n_retry) {
+
+    for(var i = 0; i < n; i++) {
+        try {
+            return request('GET', url, {headers: config.hdrs})
+        } catch(ex) {
+            if(i == n - 1) throw ex;
+        }
+    }
+}
+
+function processImg(html, imgs, options={}) {
+    
+    options.imgPrefix = options.imgPrefix || 'img/'
     
     var $ = cheerio.load(html);
     
     var $imgs = $('img');
-    
+
     for(var i = 0; i < $imgs.length; i++) {
         
         try {
             var $img = $imgs.eq(i);
             var url = $img.attr('src');
-            if(!url.startsWith('http'))
-                continue;
+            if(!url) continue
+            if(!url.startsWith('http')) {
+                if(options.pageUrl)
+                    url = new URL(url, options.pageUrl).toString()
+                else
+                    continue
+            }
             
             var picname = crypto.createHash('md5').update(url).digest('hex') + ".jpg";
             console.log(`pic: ${url} => ${picname}`)
             
             if(!imgs.has(picname)) {
-                var data = request('GET', url, {headers: headers}).getBody();
+                var data = httpGetRetry(url).getBody();
                 data = betterImg(data)
-                fs.writeFileSync(path.join(dir, 'img', picname), data);
-                imgs.add(picname);
+                imgs.set(picname, data);
             }
             
-            $img.attr('src', 'img/' + picname);
+            $img.attr('src', options.imgPrefix + picname);
         } catch(ex) {console.log(ex.toString())}
     }
     
     return $.html();
+
 }
+
+module.exports = processImg
 
 if(module == require.main) main();
