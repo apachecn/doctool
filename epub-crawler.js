@@ -9,12 +9,12 @@ apt install pngquant
 
 var cheerio = require('cheerio');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-var req = require('sync-request');
+var request = require('sync-request');
 var fs = require('fs');
 var {URL} = require('url')
 var genEpub = require('gen-epub')
 var crypto = require('crypto');
-var betterImg = require('./img-better.js')
+var processImg = require('./img.js')
 var iconv = require('iconv-lite')
 
 var config = JSON.parse(fs.readFileSync('config.json', 'utf-8'))
@@ -32,9 +32,12 @@ function main() {
             console.log('page: ' + url);
             
             if(url.startsWith('http')) {
-                var html = iconv.decode(request(url).body, config.encoding);
+                var html = iconv.decode(httpGetRetry(url).body, config.encoding);
                 var res = getContent(html, url);
-                res.content = processImg(res.content, url, imgs)
+                res.content = processImg(res.content, imgs, {
+                    pageUrl: url, 
+                    imgPrefix: '../Images/'
+                })
                 articles.push(res)
             }
             else 
@@ -58,37 +61,6 @@ function main() {
     console.log('Done..');
 }
 
-function processImg(html, pageUrl, imgs) {
-    
-    var $ = cheerio.load(html);
-    
-    var $imgs = $('img');
-
-    for(var i = 0; i < $imgs.length; i++) {
-        
-        try {
-            var $img = $imgs.eq(i);
-            var url = $img.attr('src');
-            if(!url.startsWith('http'))
-                url = new URL(url, pageUrl).toString()
-            
-            var picname = crypto.createHash('md5').update(url).digest('hex') + ".jpg";
-            console.log(`pic: ${url} => ${picname}`)
-            
-            if(!imgs.has(picname)) {
-                var data = request(url).getBody();
-                data = betterImg(data)
-                imgs.set(picname, data);
-            }
-            
-            $img.attr('src', '../Images/' + picname);
-        } catch(ex) {console.log(ex.toString())}
-    }
-    
-    return $.html();
-
-}
-
 function getTocFromCfg() {
     
     if(config.list && config.list.length > 0)
@@ -99,7 +71,7 @@ function getTocFromCfg() {
         process.exit()
     }
     
-    var html = iconv.decode(request(config.url).body, config.encoding)
+    var html = iconv.decode(httpGetRetry(config.url).body, config.encoding)
     var toc = getToc(html);
     return toc;
     
@@ -167,16 +139,15 @@ function getContent(html, url) {
     return {title: title, content: co}
 }
 
-function request(url, n=config.n_retry) {
+function httpGetRetry(url, n=config.n_retry) {
 
     for(var i = 0; i < n; i++) {
         try {
-            return req('GET', url, {headers: config.hdrs})
+            return request('GET', url, {headers: config.hdrs})
         } catch(ex) {
             if(i == n - 1) throw ex;
         }
     }
-
 }
 
 ////////////////////////////////////////////////////
