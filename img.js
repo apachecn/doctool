@@ -1,6 +1,6 @@
 var fs = require('fs');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-var request = require('sync-request');
+var {requestRetry} = require('./util.js');
 var crypto = require('crypto');
 var cheerio = require('cheerio');
 var path = require('path')
@@ -54,17 +54,6 @@ function processFile(fname) {
     }
 }
 
-function httpGetRetry(url, n=config.n_retry) {
-
-    for(var i = 0; i < n; i++) {
-        try {
-            return request('GET', url, {headers: config.hdrs})
-        } catch(ex) {
-            if(i == n - 1) throw ex;
-        }
-    }
-}
-
 function processImg(html, imgs, options={}) {
     
     options.imgPrefix = options.imgPrefix || 'img/'
@@ -90,7 +79,10 @@ function processImg(html, imgs, options={}) {
             console.log(`pic: ${url} => ${picname}`)
             
             if(!imgs.has(picname)) {
-                var data = httpGetRetry(url).getBody();
+                var data = requestRetry('GET', url, {
+                    headers: config.hdrs,
+                    retry: config.n_retry,
+                }).getBody();
                 data = betterImg(data)
                 imgs.set(picname, data);
             }
