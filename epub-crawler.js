@@ -9,7 +9,7 @@ apt install pngquant
 
 var cheerio = require('cheerio');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-var request = require('sync-request');
+var {requestRetry} = require('./util.js');
 var fs = require('fs');
 var {URL} = require('url')
 var genEpub = require('gen-epub')
@@ -25,6 +25,13 @@ function main() {
     
     var articles = []
     var imgs = new Map()
+    
+    if(config.name) {
+        articles.push({
+            title: config.name, 
+            content: `<p>来源：<a href='${config.url}'>${config.url}</a></p>`
+        })
+    }
 
     for(var i = 0; i< toc.length; i++) {
         try {
@@ -32,8 +39,13 @@ function main() {
             console.log('page: ' + url);
             
             if(url.startsWith('http')) {
-                var html = iconv.decode(httpGetRetry(url).body, config.encoding);
-                var res = getContent(html, url);
+                
+                var html = requestRetry('GET', url, {
+                    headers: config.hdrs,
+                    retry: config.n_retry,
+                }).body
+                html = iconv.decode(html, config.encoding)
+                var res = getContent(html, url)
                 res.content = processImg(res.content, imgs, {
                     pageUrl: url, 
                     imgPrefix: '../Images/'
@@ -49,15 +61,7 @@ function main() {
         }
     }
     
-    if(config.name) {
-        articles.splice(0, 0, {
-            title: config.name, 
-            content: `<p>来源：<a href='${config.url}'>${config.url}</a></p>`
-        })
-    }
-    
     genEpub(articles, imgs)
-
     console.log('Done..');
 }
 
@@ -137,17 +141,6 @@ function getContent(html, url) {
     }
     
     return {title: title, content: co}
-}
-
-function httpGetRetry(url, n=config.n_retry) {
-
-    for(var i = 0; i < n; i++) {
-        try {
-            return request('GET', url, {headers: config.hdrs})
-        } catch(ex) {
-            if(i == n - 1) throw ex;
-        }
-    }
 }
 
 ////////////////////////////////////////////////////
