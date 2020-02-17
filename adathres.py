@@ -1,5 +1,8 @@
 # coding: utf-8
 
+# 自适应二值化（扫描全能王的增强锐化）
+# python adathres.py <file|dir>
+
 import numpy as np
 from scipy import signal
 import cv2
