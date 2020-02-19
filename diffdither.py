@@ -1,12 +1,12 @@
 # coding: utf-8
 
+# 四阶灰度扩散仿色
+# python diffdither.py <file>
+
 import sys
 import cv2
 import numpy as np
 import re
-
-# 四阶灰度扩散仿色
-# python diffdither.py <file>
 
 def build_pattern(shape, a0, a1, a2, a3):
     arr = np.zeros(shape)
@@ -68,7 +68,7 @@ def process_img(img):
 def main():
     fname = sys.argv[1]
     print(fname)
-    img = cv2.imread(fname, cv2.IMREAD_GRAYSCALE)
+    img = cv2.imdecode(np.fromfile(fname, np.uint8), cv2.IMREAD_GRAYSCALE)
     img = process_img(img)
     fname = re.sub(r'\.\w+$', '', fname) + '.png'
     cv2.imwrite(fname, img, [cv2.IMWRITE_PNG_COMPRESSION, 9])
