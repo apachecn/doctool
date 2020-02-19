@@ -32,7 +32,7 @@ def process_file(fname):
         return
         
     print(fname)
-    img = cv2.imread(fname, cv2.IMREAD_GRAYSCALE)
+    img = cv2.imdecode(np.fromfile(fname, np.uint8), cv2.IMREAD_GRAYSCALE)
     img = adaptive_thres(img, 9)
     os.unlink(fname)
     nfname = re.sub(r'\.\w+$', '', fname) + '.png'
