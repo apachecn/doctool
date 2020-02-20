@@ -11,7 +11,7 @@ import os
 from os import path
 import sys
 
-def adaptive_thres(img, win, beta=0.9):
+def adaptive_thres(img, win=9, beta=0.9):
     if win % 2 == 0: win = win - 1
     # 边界的均值有点麻烦
     # 这里分别计算和和邻居数再相除
@@ -33,7 +33,7 @@ def process_file(fname):
         
     print(fname)
     img = cv2.imdecode(np.fromfile(fname, np.uint8), cv2.IMREAD_GRAYSCALE)
-    img = adaptive_thres(img, 9)
+    img = adaptive_thres(img)
     os.unlink(fname)
     nfname = re.sub(r'\.\w+$', '', fname) + '.png'
     cv2.imwrite(nfname, img, [cv2.IMWRITE_PNG_BILEVEL, 1])
