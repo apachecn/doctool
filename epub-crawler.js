@@ -75,7 +75,11 @@ function getTocFromCfg() {
         process.exit()
     }
     
-    var html = iconv.decode(httpGetRetry(config.url).body, config.encoding)
+    var html = requestRetry('GET', config.url, {
+        retry: config.n_retry,
+        headers: config.hdrs,
+    }).body
+    html = iconv.decode(html, config.encoding)
     var toc = getToc(html);
     return toc;
     
