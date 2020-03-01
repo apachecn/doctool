@@ -8,15 +8,13 @@ import cv2
 import numpy as np
 import re
 
-def build_pattern(shape, a0, a1, a2, a3):
-    arr = np.zeros(shape)
-    arr[::2, ::2] = a0
-    arr[::2, 1::2] = a1
-    arr[1::2, ::2] = a2
-    arr[1::2, 1::2] = a3
-    return arr
+def make_strip(size, fc=0, bc=255, k=2):
+    img = np.zeros(size) + bc
+    for i in range(k):
+        img[i::k, i::k] = fc
+    return img
 
-# 0 85 170 255
+
 def process_img(img):
     assert img.ndim == 2
     
@@ -26,41 +24,34 @@ def process_img(img):
         nh = round(h * rate)
         img = cv2.resize(img, (1000, nh), interpolation=cv2.INTER_CUBIC)
     
-    b, l11, l12, g1, l21, l22, g2, l31, l32, w = np.linspace(0, 255, 10).astype(int)
+    # b=0, c11, c12, c13, 
+    # c1=85, c21, c22, c23,
+    # c2=170, c31, c32, c33, w=255
+    clrs = np.linspace(0, 255, 13).astype(int)
 
-    pt11 = build_pattern(img.shape, b, b, b, g1)
-    pt12 = build_pattern(img.shape, b, g1, g1, b)
-    pt13 = build_pattern(img.shape, b, g1, g1, g1)
-    pt21 = build_pattern(img.shape, g1, g1, g1, g2)
-    pt22 = build_pattern(img.shape, g1, g2, g2, g1)
-    pt23 = build_pattern(img.shape, g1, g2, g2, g2)
-    pt31 = build_pattern(img.shape, g2, g2, g2, w)
-    pt32 = build_pattern(img.shape, g2, w, w, g2)
-    pt33 = build_pattern(img.shape, g2, w, w, w)
-                       
-    cond11 = lambda x: (x > b) & (x < l11)
-    cond12 = lambda x: (x >= l11) & (x < l12)
-    cond13 = lambda x: (x >= l12) & (x < g1)
-    cond21 = lambda x: (x > g1) & (x < l21)
-    cond22 = lambda x: (x >= l21) & (x < l22)
-    cond23 = lambda x: (x >= l22) & (x < g2)
-    cond31 = lambda x: (x > g2) & (x < l31)
-    cond32 = lambda x: (x >= l31) & (x < l32)
-    cond33 = lambda x: (x >= l32) & (x < w)
-    pts = {
-        cond11: pt11,
-        cond12: pt12,
-        cond13: pt13,
-        cond21: pt21,
-        cond22: pt22,
-        cond23: pt23,
-        cond31: pt31,
-        cond32: pt32,
-        cond33: pt33,
-    }
+    settings = [
+        {'fc': 0, 'bc': 0, 'k': 0}, # b
+        {'fc': 85, 'bc': 0, 'k': 4}, # c11
+        {'fc': 0, 'bc': 85, 'k': 2}, # c12
+        {'fc': 0, 'bc': 85, 'k': 4}, # c13
+        {'fc': 0, 'bc': 85, 'k': 0}, # c1
+        {'fc': 170, 'bc': 85, 'k': 4}, # c21
+        {'fc': 85, 'bc': 170, 'k': 2}, # c22
+        {'fc': 85, 'bc': 170, 'k': 4}, # c23
+        {'fc': 0, 'bc': 170, 'k': 0}, # c2
+        {'fc': 170, 'bc': 255, 'k': 4}, # c31
+        {'fc': 170, 'bc': 255, 'k': 2}, # c32
+        {'fc': 255, 'bc': 170, 'k': 4}, # c33
+        {'fc': 0, 'bc': 255, 'k': 0}, # w
+    ]
     
-    for cond, pt in pts.items():
-        idx = cond(img).astype(int)
+    delims = (clrs[1:] + clrs[:-1]) // 2
+    delims = np.asarray([0, *delims, 255])
+                       
+    idcs = [((img >= st) & (img < ed)) for st, ed in zip(delims[:-1], delims[1:])]
+    
+    for idx, kwargs in zip(idcs, settings):
+        pt = make_strip(img.shape, **kwargs)
         img = img * (1 - idx) + pt * idx
     
     return img
