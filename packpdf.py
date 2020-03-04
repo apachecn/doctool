@@ -4,6 +4,7 @@
 # 或者图片锐化打包 PDF
 # python packpdf.py <pdf|dir> [-s <size>]
 
+import numpy as np
 import cv2
 import sys
 import os
