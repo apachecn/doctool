@@ -1,7 +1,7 @@
 # coding: utf-8
 
 # 四阶灰度扩散仿色
-# python diffdither.py <file>
+# python diffdither.py <file> [-m <trunc|grid|strip|noise>]
 
 import sys
 import cv2
@@ -39,8 +39,19 @@ modes = {
     'strip': make_strip,
 }
 
+def greyl4(img, l=4):
+    assert img.ndim == 2
+    
+    colors = np.linspace(0, 255, l).astype(int)
+    
+    img_3d = np.expand_dims(img, 2)
+    dist = np.abs(img_3d - colors)
+    idx = np.argmin(dist, axis=2)
+    img = colors[idx]
+    
+    return img
 
-def process_img(img, mode='grid'):
+def diffdither(img, mode='grid'):
     assert img.ndim == 2
     
     '''
@@ -88,13 +99,17 @@ def process_img(img, mode='grid'):
 def main():
     parser = ArgumentParser()
     parser.add_argument('fname')
-    parser.add_argument('--mode', '-m', default='grid', choices=modes.keys())
+    parser.add_argument('--mode', '-m', default='grid', \
+                        choices=[*modes.keys(), 'trunc'])
     args = parser.parse_args()
 
     fname = args.fname
     print(fname)
     img = cv2.imdecode(np.fromfile(fname, np.uint8), cv2.IMREAD_GRAYSCALE)
-    img = process_img(img, args.mode)
+    if args.mode == 'trunc':
+        img = greyl4(img)
+    else:
+        img = diffdither(img, args.mode)
     fname = re.sub(r'\.\w+$', '', fname) + '.png'
     cv2.imwrite(fname, img, [cv2.IMWRITE_PNG_COMPRESSION, 9])
     
