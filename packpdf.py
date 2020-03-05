@@ -16,6 +16,7 @@ import time
 import argparse
 import shutil
 import fitz
+import img2pdf
 
 def dump_pdf(fname, dir):
 
@@ -53,22 +54,10 @@ def dump_pdf(fname, dir):
 
 def gen_pdf(fname, dir):
     files = filter(is_pic, os.listdir(dir))
-    
-    doc = fitz.open()
-    for f in files:
-        f = path.join(dir, f)
-        pdf = fitz.open(f).convertToPDF()
-        pdf = fitz.open("pdf", pdf)
-        doc.insertPDF(pdf)
-    doc.save(fname)
-    doc.close()
-        
-    '''
     files = list(map(lambda s: path.join(dir, s), files))
     pdf = img2pdf.convert(files)
-    with open(p, 'wb') as f:
+    with open(fname, 'wb') as f:
         f.write(pdf)
-    '''
 
 def process_img(img, size=1440):
     # check grayscale
