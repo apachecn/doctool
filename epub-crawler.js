@@ -3,6 +3,7 @@ npm install sync-request
 npm install cheerio
 npm install gen-epub@git+https://github.com/258ch/gen-epub
 npm install iconv-lite
+npm install sleep
 apt install imagemagick
 apt install pngquant
 */
@@ -16,6 +17,7 @@ var genEpub = require('gen-epub')
 var crypto = require('crypto');
 var processImg = require('./img.js')
 var iconv = require('iconv-lite')
+var sleep = require('sleep')
 
 var config = JSON.parse(fs.readFileSync('config.json', 'utf-8'))
 
@@ -55,6 +57,7 @@ function main() {
             else 
                 articles.push({title: url, content: ''})
             
+            sleep.sleep(config.wait)
         } catch(ex) {
             console.log(ex);
             i--;
