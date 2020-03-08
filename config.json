@@ -7,6 +7,7 @@
     "content": "div.body",
     "remove": "",
     "n_retry": 5,
+    "wait": 1,
     "encoding": "utf-8",
     "credit": false,
     "processMath": false,
