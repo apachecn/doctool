@@ -6,8 +6,6 @@ var cheerio = require('cheerio');
 var path = require('path')
 var betterImg = require('./img-better.js')
 
-var config = JSON.parse(fs.readFileSync('config.json', 'utf-8'))
-
 var isDir = s => fs.statSync(s).isDirectory()
 
 function mkdirSyncSafe(dir) {
@@ -81,10 +79,7 @@ function processImg(html, imgs, options={}) {
             console.log(`pic: ${url} => ${picname}`)
             
             if(!imgs.has(picname)) {
-                var data = requestRetry('GET', url, {
-                    headers: config.hdrs,
-                    retry: config.n_retry,
-                }).getBody();
+                var data = requestRetry('GET', url).getBody();
                 data = betterImg(data)
                 imgs.set(picname, data);
             }
