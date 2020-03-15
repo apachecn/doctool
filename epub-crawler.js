@@ -47,7 +47,7 @@ function main() {
                     retry: config.n_retry,
                 }).body
                 html = iconv.decode(html, config.encoding)
-                var res = getContent(html, url)
+                var res = getArticle(html, url)
                 res.content = processImg(res.content, imgs, {
                     pageUrl: url, 
                     imgPrefix: '../Images/'
@@ -119,7 +119,7 @@ function getToc(html)  {
     return res;
 }
 
-function getContent(html, url) {
+function getArticle(html, url) {
     if(config.processMath)
         html = processMath(html)
     if(config.processDecl)
@@ -132,7 +132,7 @@ function getContent(html, url) {
     
     // 只取一个元素
     var $title = $(config.title).eq(0)
-    var title = $title.text()
+    var title = $title.text().trim()
     $title.remove()
     
     // 解决 Cheerio 的 .html 多播问题
