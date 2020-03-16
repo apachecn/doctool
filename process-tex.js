@@ -5,12 +5,24 @@ var path = require('path')
 
 function processTex(html, isMD=false) {
     
+    var re = /\\\((.+?)\\\)|\\\[([\s\S]+?)\\\]|\$(.+?)\$|\$\$([\s\S]+?)\$\$/g
     var rm;
-    while(rm = /\\\((.+?)\\\)|\\\[([\s\S]+?)\\\]|\$\$?([\s\S]+?)\$\$?/g.exec(html)){
-        var tex = rm[1] || rm[2] || rm[3]
+    while(rm = re.exec(html)){
+        var tex = rm[1] || rm[2] || rm[3] || rm[4]
+        tex = tex.replace(/&#x\d+;/g, s => {
+            var code = s.slice(3, -1)
+            return String.fromCharCode(Number.parseInt(code, 16))
+        }).replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&apos;/g, "'")
+          .replace(/&amp;/g, '&')
+          .replace(/&nbsp;/g, ' ')
+          
         var encoTex = encodeURIComponent(tex)
             .replace(/\(/g, '%28')
             .replace(/\)/g, '%29')
+            .replace(/"/g, '%22')
         
         var url = 'https://www.zhihu.com/equation?tex=' + encoTex
         
@@ -18,7 +30,7 @@ function processTex(html, isMD=false) {
         if(isMD)
             html = html.split(rm[0]).join(`![${encoTex}](${url})`)
         else
-            html = html.split(rm[0]).join(`<img alt='${encoTex}' src='${url}' />`)
+            html = html.split(rm[0]).join(`<img alt="${encoTex}" src="${url}" />`)
 
     }
     
