@@ -115,7 +115,7 @@ def process_pdf(fname, **kwargs):
     process_dir(dir, **kwargs)
     shutil.rmtree(dir)
     os.rename(fname, fname + '.bak')
-    os.rename(dir + '.pdf', fname)
+    shutil.move(dir + '.pdf', fname)
     
 def main():
 
