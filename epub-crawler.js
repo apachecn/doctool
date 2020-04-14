@@ -19,7 +19,8 @@ var processImg = require('./img.js')
 var iconv = require('iconv-lite')
 var sleep = require('sleep')
 
-var config = JSON.parse(fs.readFileSync('config.json', 'utf-8'))
+var configFname = process.argv[2] || 'config.json'
+var config = JSON.parse(fs.readFileSync(configFname, 'utf-8'))
 
 function main() {
     
