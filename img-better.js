@@ -14,7 +14,7 @@ function betterImg(img, tmpDir) {
     var fname = new Date().getTime().toString() + '.png'
     fname = path.join(tmpDir, fname)
     fs.writeFileSync(fname, img)
-    chp.spawnSync('convert', [fname, fname])
+    chp.spawnSync('convert', [fname + '[0]', fname])
     chp.spawnSync('pngquant', ['4', fname, '-o', fname, '-f'])
     img = fs.readFileSync(fname)
     safeUnlink(fname)
