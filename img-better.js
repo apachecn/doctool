@@ -11,18 +11,12 @@ var os = require('os')
 function betterImg(img, tmpDir) {
     
     tmpDir = tmpDir || os.tmpdir()
-    var fname = new Date().getTime().toString() + '.jpg'
+    var fname = new Date().getTime().toString() + '.png'
     fname = path.join(tmpDir, fname)
     fs.writeFileSync(fname, img)
-    fnamePng = fname.slice(0, -4) + '-conv.png'
-    fnameFs8 = fnamePng.slice(0, -4) + '-comp.png'
-    chp.spawnSync('convert', [fname, fnamePng])
-    chp.spawnSync('pngquant', ['8', fnamePng, '-o', fnameFs8])
-    if(fs.existsSync(fnameFs8)) {
-        img = fs.readFileSync(fnameFs8)
-        safeUnlink(fnameFs8)
-    }
-    safeUnlink(fnamePng)
+    chp.spawnSync('convert', [fname, fname])
+    chp.spawnSync('pngquant', ['4', fname, '-o', fname, '-f'])
+    img = fs.readFileSync(fname)
     safeUnlink(fname)
     return img
 }
