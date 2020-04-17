@@ -15,7 +15,7 @@ function betterImg(img, tmpDir) {
     fname = path.join(tmpDir, fname)
     fs.writeFileSync(fname, img)
     chp.spawnSync('convert', [fname + '[0]', fname])
-    chp.spawnSync('pngquant', ['4', fname, '-o', fname, '-f'])
+    chp.spawnSync('pngquant', ['8', fname, '-o', fname, '-f'])
     img = fs.readFileSync(fname)
     safeUnlink(fname)
     return img
