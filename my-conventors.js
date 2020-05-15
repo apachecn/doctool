@@ -2,19 +2,6 @@
 
 'use strict';
 
-function esc(s)
-{
-    return s.replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
-}
-
-function escForTable(s)
-{
-    return s.replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/\|/g, '&#124;');
-}
-
 function cell(content, node) {
   var index = Array.prototype.indexOf.call(node.parentNode.childNodes, node);
   var prefix = ' ';
@@ -22,151 +9,91 @@ function cell(content, node) {
   return prefix + content + ' |';
 }
 
-var highlightRegEx = /highlight highlight-(\S+)/;
-
 module.exports = [
 
-  //paragraph
+  //<p> in <td>
   {
-    filter: 'p',
-    replacement: function (content, node) {
-      if(node.parentNode.nodeName === 'TD')
-          return esc(content);
-      else
-        return '\n\n' + esc(content) + '\n\n';
-    }
+    filter: function(n) {
+        return n.nodeName == 'P' &&
+            n.parentNode.nodeName === 'TD'
+    },
+    replacement: function(c){return c}
   },
 
-  //dl (to paragraph)
+  //<dl> (to <p>)
   {
     filter: ['dd', 'dt'],
-    replacement: function (content) {
-      return '\n\n' + esc(content) + '\n\n';
+    replacement: function (c) {
+      return '\n\n' + c + '\n\n';
     }
   },
   
   {
       filter: 'dl',
-      replacement: function(c){return c;}
+      replacement: function(c){return c}
   },
   
-  //span & div
+  // <em> & <i>
+  
+  {
+      filter: ['em', 'i'],
+      replacement: function(c){return '*' + c + '*'}
+  },
+  
+  //<span> & <div>
   
   {
     filter: ['span', 'div'],
-    replacement: function(c){return c;}
+    replacement: function(c){return c}
   },
   
   //sth to clean
   {
     filter: ['style', 'base', 'meta', 'script'],
-    replacement: function(c){return '';}
-  },
-
-  //title
-  {
-    filter: ['h1', 'h2', 'h3', 'h4','h5', 'h6'],
-    replacement: function(content, node) {
-      var hLevel = node.nodeName.charAt(1);
-      var hPrefix = '';
-      for(var i = 0; i < hLevel; i++) {
-        hPrefix += '#';
-      }
-      return '\n\n' + hPrefix + ' ' + esc(content) + '\n\n';
-    }
-  },
-
-  //quote
-  {
-    filter: 'blockquote',
-    replacement: function (content) {
-      content = esc(content).trim();
-      content = content.replace(/\n{3,}/g, '\n\n');
-      content = content.replace(/^/gm, '> ');
-      return '\n\n' + content + '\n\n';
-    }
-  },
-
-  //list
-  {
-    filter: 'li',
-    replacement: function (content, node) {
-      content = content.replace(/^\s+/, '').replace(/\n/gm, '\n    ');
-      var prefix = '*   ';
-      var parent = node.parentNode;
-      var index = Array.prototype.indexOf.call(parent.children, node) + 1;
-
-      prefix = /ol/i.test(parent.nodeName) ? index + '.  ' : '*   ';
-      return prefix + esc(content);
-    }
+    replacement: function(){return ''}
   },
   
-  // Inline code
+  // <code>
   {
-    filter: function (node) {
-      return ['CODE', 'TT', 'VAR'].indexOf(node.nodeName) != -1;
-    },
-    replacement: function(content, node) {
-      if(node.parentNode.nodeName !== 'PRE')
-        return '`' + content + '`';
+    filter: ['code', 'tt', 'var', 'kbd'],
+    replacement: function(c, n) {
+      if(n.parentNode.nodeName !== 'PRE')
+        return '`' + c + '`';
       else
-        return content;
+        return c;
     }
   },
   
-  //non-link anchor
+  //non-link <a>
   {
-    filter: function (node) {
-      return node.nodeName === 'A' && !node.getAttribute('href');
+    filter: function (n) {
+      return n.nodeName === 'A' && !n.getAttribute('href');
     },
-    replacement: function(content) { return content; }
+    replacement: function(){return ''}
   },
   
-  // Fenced code blocks
+  // <pre>
   {
     filter: 'pre',
-    replacement: function(c, n) {
-        var lang = '';
-        if(n.parentNode.nodeName === 'DIV' &&
-           highlightRegEx.test(n.parentNode.className))
-           lang = n.parentNode.className.match(highlightRegEx)[1];
-        
-        return '\n\n```' + lang + '\n' + c + '\n```\n\n';
+    replacement: function(c) {
+        return '\n\n```\n' + c + '\n```\n\n';
     }
   },
   
+  // tags in <pre>
   {
     filter: function(n) {
-        return n.parentNode.nodeName === 'PRE';
+        return n.parentNode.nodeName === 'PRE' &&
+            n.nodeName != 'BR'
     },
-    replacement: function(c){return c;}
+    replacement: function(c){return c}
   },
   
-  //table 
+  //<th> & <td>
   {
     filter: ['th', 'td'],
-    replacement: function (content, node) {
-      return cell(escForTable(content), node);
+    replacement: function (c, n) {
+      return cell(c.replace(/\|/g, '&#124;'), n);
     }
   },
-  
-  {
-    filter: 'tr',
-    replacement: function (content, node) {
-      var borderCells = '';
-      var alignMap = { left: ':--', right: '--:', center: ':-:' };
-
-      if (node.childNodes[0].nodeName === 'TH') {
-        for (var i = 0; i < node.childNodes.length; i++) {
-          var align = node.childNodes[i].attributes.align;
-          var border = '---';
-
-          if (align) { border = alignMap[align.value] || border; }
-
-          borderCells += cell(border, node.childNodes[i]);
-        }
-      }
-      return '\n' + content + (borderCells ? '\n' + borderCells : '');
-    }
-  }
 ];
