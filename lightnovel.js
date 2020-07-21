@@ -170,7 +170,7 @@ function fetch(fname, st, ed, withDt=false) {
 function batch(fname) {
     var li = fs.readFileSync(fname, 'utf-8')
         .split('\n').map(x => x.trim()).filter(x => x)
-    for(var id of li) download(id)
+    for(var id of li) download(id.split(' ')[0])
 }
 
 function main() {
