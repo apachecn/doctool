@@ -31,7 +31,8 @@ function processFile(fname) {
     if(!fname.endsWith('.html')) 
         return;
     console.log(`file: ${fname}`)
-    var co = fs.readFileSync(fname, 'utf-8');
+    var co = fs.readFileSync(fname, 'utf-8')
+               .replace(/<a[^>]*\/>/g, '');
     var mdName = fname.replace(/\.html/g, '.md')
     var md = toMD(co, {
         gfm: true,
