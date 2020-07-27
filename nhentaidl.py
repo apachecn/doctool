@@ -54,7 +54,10 @@ def process_img(img):
         img = cv2.resize(img, (1000, nh), interpolation=cv2.INTER_CUBIC)
     
     img = grid(img)
-    img = cv2.imencode('.png', img, [cv2.IMWRITE_PNG_COMPRESSION, 9])[1]
+    img = cv2.imencode(
+        '.png', img, 
+        [cv2.IMWRITE_PNG_COMPRESSION, 9]
+    )[1]
     return bytes(img)
 
 def gen_epub(articles, imgs=None, name=None, out_path=None):   
