@@ -41,7 +41,7 @@ def get_info(html):
             .replace('t.nhentai', 'i.nhentai')
         for i in imgs
     ]
-    return {'title': title, 'imgs': imgs[:2]}
+    return {'title': title, 'imgs': imgs}
 
 def process_img(img):
     img = np.frombuffer(img, np.uint8)
