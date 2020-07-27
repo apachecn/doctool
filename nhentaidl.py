@@ -3,12 +3,14 @@ from pyquery import PyQuery as pq
 import os
 import sys
 from os import path
-from imgyaso import grid_bts
+from imgyaso import grid
 import shutil
 import json
 import subprocess as subp
 import uuid
 import tempfile
+import numpy as np
+import cv2
 
 # npm install -g gen-epub
 
@@ -39,7 +41,21 @@ def get_info(html):
             .replace('t.nhentai', 'i.nhentai')
         for i in imgs
     ]
-    return {'title': title, 'imgs': imgs}
+    return {'title': title, 'imgs': imgs[:2]}
+
+def process_img(img):
+    img = np.frombuffer(img, np.uint8)
+    img = cv2.imdecode(img, cv2.IMREAD_GRAYSCALE)
+    
+    h, w = img.shape
+    if w > 1000:
+        rate = 1000 / w
+        nh = round(h * rate)
+        img = cv2.resize(img, (1000, nh), interpolation=cv2.INTER_CUBIC)
+    
+    img = grid(img)
+    img = cv2.imencode('.png', img, [cv2.IMWRITE_PNG_COMPRESSION, 9])[1]
+    return bytes(img)
 
 def gen_epub(articles, imgs=None, name=None, out_path=None):   
     imgs = imgs or {}
@@ -87,7 +103,7 @@ def main():
         fname = str(i).zfill(l) + '.png'
         print(f'{img_url} => {fname}')
         img = requests.get(img_url, headers=hdrs).content
-        img = grid_bts(img)
+        img = process_img(img)
         imgs[fname] = img
             
     co = [
