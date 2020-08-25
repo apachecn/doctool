@@ -10,13 +10,13 @@ import sys
 import os
 from os import path
 import re
-from adathres import adaptive_thres
 import tempfile
 import time
 import argparse
 import shutil
 import fitz
 import img2pdf
+from imgyaso import adathres
 
 def dump_pdf(fname, dir):
 
@@ -72,7 +72,7 @@ def process_img(img, size=1440):
         img = cv2.resize(img, (nw, nh), interpolation=cv2.INTER_CUBIC)
     
     # bw
-    img = adaptive_thres(img, 9)
+    img = adathres(img, 9)
     
     return img
     
