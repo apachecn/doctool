@@ -9,11 +9,11 @@ const GH_TOKEN = process.env['GH_TOKEN']
 const defaultHdrs = {'User-Agent': 'ApacheCN'}
 
 function requestRetry(method, url, ops) {
-    while(true) {
+    for (var i = 1; ; i++) {
         try {
             return req(method, url, ops)
         } catch(ex) {
-            console.log(ex)
+            console.log(`$method $url: retry $i`)
         }
     }
 }
@@ -66,6 +66,7 @@ function main() {
         var rootFiles = getRootFile('apachecn', doc)
         // 在这里填写过滤条件
         var isDocRepo = rootFiles.includes('doc') ||
+                        rootFiles.includes('docs') ||
                         rootFiles.includes('SUMMARY.md')
         if(!isDocRepo || rootFiles.includes('LICENSE'))
            continue
