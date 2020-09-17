@@ -13,7 +13,7 @@ function requestRetry(method, url, ops) {
         try {
             return req(method, url, ops)
         } catch(ex) {
-            console.log(`$method $url: retry $i`)
+            console.log(`${method} ${url}: retry ${i}`)
         }
     }
 }
