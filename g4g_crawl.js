@@ -52,6 +52,8 @@ function getArticle(html) {
 
 function download(id) {
     console.log(id)
+    if (fs.existsSync(`out/${id}.html`))
+        return
     var url = `https://www.geeksforgeeks.org/${id}/`
     var html = req('GET', url).body.toString()
     var art = getArticle(html)
