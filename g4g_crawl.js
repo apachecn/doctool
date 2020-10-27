@@ -6,8 +6,8 @@ var fs = require('fs')
 var selectors = {
     'title': 'h1.entry-title',
     'content': '.entry-content',
-    'remove': 'script, ins, iframe, #personalNoteDiv, .recommendedPostsDiv, .author_info_box, .entry-meta, #practiceLinkDiv, div[id^=AP], #improvedBy',
-    'tab': '.tabcontent',
+    'remove': 'script, ins, iframe, #personalNoteDiv, .recommendedPostsDiv, .author_info_box, .entry-meta, #practiceLinkDiv, div[id^=AP], #improvedBy, .code-output-container',
+    'tab': '.code-block',
     'code': 'td.code',
     'link': 'h2.entry-title>a',
 }
