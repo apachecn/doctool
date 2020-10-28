@@ -116,17 +116,16 @@ function download(id) {
         }
         
         var imgs = new Map()
-        var co = []
 
         for(var [i, picUrl] of art.pics.entries()) {
             console.log(`pic: ${picUrl}`)
             var img = request('GET', picUrl, {headers: headers}).body
             img = procImg(img)
             imgs.set(`${i}.png`, img)
-            co.push(`${i}.png`)
         }
         
-        co = co.map(s => `<p><img src='../Images/${s}' width='100%' /></p>`)
+        co = Array.from(Array(art.pics.length).keys())
+            .map(i => `<p><img src='../Images/${i}.png' width='100%' /></p>`)
             .join('\r\n')
         var articles = [{title: `${art.title} - ${art.ch}`, content: co}]
         genEpub(articles, imgs, null, p)
@@ -198,7 +197,6 @@ function pack(dir) {
         var img = fs.readFileSync(f)
         img = procImg(img)
         imgs.set(`${i}.png`, img)
-        co.push(`${i}.png`)
     }
     
     co = Array.from(Array(files.length).keys())
