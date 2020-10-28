@@ -8,7 +8,7 @@ var {URL} = require('url')
 
 var dtMap = loadDtMap()
 
-var cookie = fs.readFileSync('COOKIE', 'utf-8')
+var cookie = process.env['WK8_COOKIE'] || ''
 
 function sleep(s) {
     chp.spawnSync('sleep', [s])
@@ -178,7 +178,7 @@ function main() {
     var arg = process.argv[3]
     if(cmd == 'fetch') fetch(arg, process.argv[4], process.argv[5])
     else if(cmd == 'batch') batch(arg)
-    else if(cmd == 'dl') download(arg)
+    else if(cmd == 'dl' || cmd == 'download') download(arg)
     else if(cmd == 'fetchdt') fetch(arg, process.argv[4], process.argv[5], true)
 }
 
