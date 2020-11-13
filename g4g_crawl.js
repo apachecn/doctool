@@ -111,8 +111,8 @@ function fetch(fname, cate, st, ed) {
         var url = `https://www.geeksforgeeks.org/category/${cate}/page/${i}/`
         var html = req('GET', url).body.toString()
         var ids = getIds(html)
-            .filter(x => !existed.has(x))
         if (ids.length == 0) break
+        ids = ids.filter(x => !existed.has(x))
         for (var id of ids)
             fs.writeSync(ofile, id + '\n')
     }
