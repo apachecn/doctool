@@ -29,7 +29,7 @@ function requestRetry(method, url, options={}) {
 
 var req = requestRetry
 
-function getArticle(html) {
+function getArticle(html, url) {
     var $ = cheerio.load(html)
     if (selectors.remove)
         $(selectors.remove).remove()
@@ -46,6 +46,7 @@ function getArticle(html) {
     var title = '<h1>' + 
         $(selectors.title).eq(0).text().trim() + '</h1>'
     var co = $(selectors.content).html()
+    co = `<blockquote>原文：<a href='${url}'>${url}</a></blockquote>${co}`
     
     return {title: title, content: co}
 }
@@ -56,7 +57,7 @@ function download(id) {
         return
     var url = `https://www.geeksforgeeks.org/${id}/`
     var html = req('GET', url).body.toString()
-    var art = getArticle(html)
+    var art = getArticle(html, url)
     var imgs = new Map()
     art.content = processImg(art.content, imgs, {
         'pageUrl': url,
