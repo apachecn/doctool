@@ -2,7 +2,7 @@ var req = require('sync-request')
 var moment = require('moment')
 var fs = require('fs')
 var genEpub = require('gen-epub')
-var processImg = require('./img.js')
+var processImg = require('epub-crawler/src/img')
 
 function getContent(art) {
     
