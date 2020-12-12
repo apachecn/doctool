@@ -22,9 +22,26 @@ def load_existed():
     existed = []
     if path.exists('existed.txt'):
         existed = filter(None, open('existed.txt').read().split('\n'))
-    return set(existed)
+    return existed
     
 existed = load_existed()
+
+def check_exist(existed, name):
+    return any([
+        ngram_iou(e, name) >= 0.8 
+        for e in existed
+    ])
+
+def ngram(s, n=1):
+    for i in range(0, len(s) - n + 1):
+        yield s[i:i+n]
+
+def ngram_iou(s1, s2, n=1):
+    set1 = set(ngram(s1, n))
+    set2 = set(ngram(s2, n))
+    intersect = set1 & set2
+    union = set1 | set2
+    return len(intersect) / len(union)
 
 def fname_escape(name):
     
@@ -123,7 +140,7 @@ def main():
     info = get_info(html)
     print(info['title'])
     
-    if info['title'] in existed:
+    if check_exist(existed, info['title']):
         print('已存在')
         return 
         
