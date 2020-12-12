@@ -23,6 +23,20 @@ config = {
     },
 }
 
+def request_retry(method, url, retry=10, **kw):
+    kw.setdefault('timeout', 10)
+    for i in range(retry):
+        try:
+            return requests.request(method, url, **kw)
+        except KeyboardInterrupt as e:
+            raise e
+        except Exception as e:
+            print(f'{url} retry {i}')
+            if i == retry - 1: raise e
+
+get_retry = lambda *args, **kwargs: \
+    request_retry('GET', *args, **kwargs)
+
 def load_existed():
     existed = []
     if path.exists('existed.json'):
@@ -129,7 +143,7 @@ def gen_epub(articles, imgs=None, name=None, out_path=None):
 
 def download(id):
     url = f'https://nhentai.net/g/{id}/'
-    html = requests.get(url).text
+    html = get_retry(url).text
     info = get_info(html)
     print(info['title'])
     
@@ -148,7 +162,7 @@ def download(id):
     for i, img_url in enumerate(info['imgs']):
         fname = str(i).zfill(l) + '.png'
         print(f'{img_url} => {fname}')
-        img = requests.get(img_url, headers=config['hdrs']).content
+        img = get_retry(img_url, headers=config['hdrs']).content
         img = process_img(img)
         imgs[fname] = img
             
@@ -169,15 +183,13 @@ def get_ids(html):
     ]
     return ids
     
-def fetch(fname, cate="", st=None, ed=None):
+def fetch(fname, cate="", st=1, ed=1_000_000):
     ofile = open(fname, 'w')
-    st = int(st or 1)
-    ed = int(ed or 1_000_000)
     
     for i in range(st, ed + 1):
         print(f'page: {i}')
         url = f'https://nhentai.net/{cate}/?page={i}'
-        html = requests.get(url).text
+        html = get_retry(url).text
         ids = get_ids(html)
         if len(ids) == 0: break
         for id in ids:
@@ -214,8 +226,8 @@ def main():
         fetch(
             sys.argv[2], 
             sys.argv[3] if len(sys.argv) > 3 else "", 
-            sys.argv[4] if len(sys.argv) > 4 else None,
-            sys.argv[5] if len(sys.argv) > 5 else None,
+            sys.argv[4] if len(sys.argv) > 4 else 1,
+            sys.argv[5] if len(sys.argv) > 5 else 1_000_000,
         )
     elif op == 'extract':
         extract(sys.argv[2])
