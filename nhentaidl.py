@@ -21,12 +21,7 @@ config = {
     'hdrs': {
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
     },
-    'lang': 'chinese',
 }
-
-
-
-
 
 def load_existed():
     existed = []
@@ -132,17 +127,11 @@ def gen_epub(articles, imgs=None, name=None, out_path=None):
     ).communicate()
     safe_rmdir(dir)
 
-def main():
-    
-    id = sys.argv[1]
+def download(id):
     url = f'https://nhentai.net/g/{id}/'
     html = requests.get(url).text
     info = get_info(html)
     print(info['title'])
-    
-    if config['lang'] not in info['tags']:
-        print('非所选语言')
-        return
     
     if check_exist(existed, info['title']):
         print('已存在')
@@ -170,5 +159,65 @@ def main():
     co = '\n'.join(co)
     articles = [{'title': info['title'], 'content': co}]
     gen_epub(articles, imgs, None, ofname)
+    
+def get_ids(html):
+    root = pq(html)
+    links = root('a.cover')
+    ids = [
+        pq(l).attr('href')[3:-1]
+        for l in links
+    ]
+    return ids
+    
+def fetch(fname, cate="", st=None, ed=None):
+    ofile = open(fname, 'w')
+    st = st or 1
+    ed = ed or 1_000_000
+    
+    for i in range(st, ed + 1):
+        print(f'page: {i}')
+        url = f'https://nhentai.net/{cate}/?page={i}'
+        html = requests.get(url).text
+        ids = get_ids(html)
+        if len(ids) == 0: break
+        for id in ids:
+            ofile.write(id + '\n')
+            
+    ofile.close()
+    
+def batch(fname):
+    ids = filter(None, open(fname).read().split('\n'))
+    for id in ids:
+        download(id)
+        
+def extract(fname):
+    lines = open(fname, encoding='utf-8').read().split('\n')
+    lines = filter(None, lines)
+    res = []
+    
+    for l in lines:
+        rms = re.findall(RE_LINE, l)
+        if len(rms) == 0: continue
+        res.append(rms[-1])
+        
+    open(fname + '.json', encoding='utf-8') \
+        .write(json.dumps(res))
+    
+    
+def main():
+    op = sys.argv[1]
+    if op in ['dl', 'download']:
+        download(sys.argv[2])
+    elif op == 'batch':
+        batch(sys.argv[2])
+    elif op == 'fetch':
+        fetch(
+            sys.argv[2], 
+            sys.argv[3] if len(sys.argv) > 3 else "", 
+            sys.argv[4] if len(sys.argv) > 4 else None,
+            sys.argv[5] if len(sys.argv) > 5 else None,
+        )
+    elif op == 'extract':
+        extract(sys.argv[2])
 
 if __name__ == '__main__': main()
