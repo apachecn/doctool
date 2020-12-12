@@ -17,9 +17,16 @@ import re
 
 RE_INFO = r'\[(.+?)\]\s*(.+?)\s*(?=\[|$)'
 
-hdrs = {
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
+config = {
+    'hdrs': {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
+    },
+    'lang': 'chinese',
 }
+
+
+
+
 
 def load_existed():
     existed = []
@@ -61,6 +68,8 @@ def safe_rmdir(dir):
 def get_info(html):
     root = pq(html)
     title = root('h2.title').eq(0).text().strip()
+    tags = root('.tag>.name')
+    tags = set((pq(t).text() for t in tags))
     imgs = root('.gallerythumb > img')
     imgs = [
         pq(i).attr('data-src')
@@ -69,7 +78,7 @@ def get_info(html):
             .replace('t.nhentai', 'i.nhentai')
         for i in imgs
     ]
-    return {'title': fname_escape(title), 'imgs': imgs}
+    return {'title': fname_escape(title), 'imgs': imgs, 'tags': tags}
 
 def process_img(img):
     img = np.frombuffer(img, np.uint8)
@@ -131,6 +140,10 @@ def main():
     info = get_info(html)
     print(info['title'])
     
+    if config['lang'] not in info['tags']:
+        print('非所选语言')
+        return
+    
     if check_exist(existed, info['title']):
         print('已存在')
         return 
@@ -146,7 +159,7 @@ def main():
     for i, img_url in enumerate(info['imgs']):
         fname = str(i).zfill(l) + '.png'
         print(f'{img_url} => {fname}')
-        img = requests.get(img_url, headers=hdrs).content
+        img = requests.get(img_url, headers=config['hdrs']).content
         img = process_img(img)
         imgs[fname] = img
             
