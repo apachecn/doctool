@@ -18,6 +18,26 @@ hdrs = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
 }
 
+def load_existed():
+    existed = []
+    if path.exists('existed.txt'):
+        existed = filter(None, open('existed.txt').read().split('\n'))
+    return set(existed)
+    
+existed = load_existed()
+
+def fname_escape(name):
+    
+    return name.replace('\\', '＼') \
+               .replace('/', '／') \
+               .replace(':', '：') \
+               .replace('*', '＊') \
+               .replace('?', '？') \
+               .replace('"', '＂') \
+               .replace('<', '＜') \
+               .replace('>', '＞') \
+               .replace('|', '｜')
+
 def safe_mkdir(dir):
     try:
         os.mkdir(dir)
@@ -41,11 +61,14 @@ def get_info(html):
             .replace('t.nhentai', 'i.nhentai')
         for i in imgs
     ]
-    return {'title': title, 'imgs': imgs}
+    return {'title': fname_escape(title), 'imgs': imgs}
 
 def process_img(img):
     img = np.frombuffer(img, np.uint8)
     img = cv2.imdecode(img, cv2.IMREAD_GRAYSCALE)
+    
+    h, w = img.shape
+    if (w > h): img = img.T[::-1]
     
     h, w = img.shape
     if w > 1000:
@@ -100,6 +123,16 @@ def main():
     info = get_info(html)
     print(info['title'])
     
+    if info['title'] in existed:
+        print('已存在')
+        return 
+        
+    ofname = f"out/{info['title']}.epub"
+    if path.exists(ofname):
+        print('已存在')
+        return
+    safe_mkdir('out')
+    
     imgs = {}
     l = len(str(len(info['imgs'])))
     for i, img_url in enumerate(info['imgs']):
@@ -115,6 +148,6 @@ def main():
     ]
     co = '\n'.join(co)
     articles = [{'title': info['title'], 'content': co}]
-    gen_epub(articles, imgs)
+    gen_epub(articles, imgs, None, ofname)
 
 if __name__ == '__main__': main()
