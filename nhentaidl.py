@@ -171,8 +171,8 @@ def get_ids(html):
     
 def fetch(fname, cate="", st=None, ed=None):
     ofile = open(fname, 'w')
-    st = st or 1
-    ed = ed or 1_000_000
+    st = int(st or 1)
+    ed = int(ed or 1_000_000)
     
     for i in range(st, ed + 1):
         print(f'page: {i}')
