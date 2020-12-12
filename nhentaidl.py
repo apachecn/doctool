@@ -226,8 +226,8 @@ def main():
         fetch(
             sys.argv[2], 
             sys.argv[3] if len(sys.argv) > 3 else "", 
-            sys.argv[4] if len(sys.argv) > 4 else 1,
-            sys.argv[5] if len(sys.argv) > 5 else 1_000_000,
+            int(sys.argv[4]) if len(sys.argv) > 4 else 1,
+            int(sys.argv[5]) if len(sys.argv) > 5 else 1_000_000,
         )
     elif op == 'extract':
         extract(sys.argv[2])
