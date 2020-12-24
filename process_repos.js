@@ -3,6 +3,7 @@ const chp = require('child_process')
 const path = require('path')
 const moment = require('moment')
 const nbp = require('npm-book-publisher')
+const cheerio = require('cheerio')
 const {
 	defaultHdrs,
 	requestRetry,
@@ -12,6 +13,26 @@ const {
 } = require('./gh_util.js')
 
 const request = requestRetry
+
+// 添加 Gitee Cookie
+const GT_COOKIE = process.env['GT_COOKIE']
+
+function giteeDeployPages(name, repo) {
+	var hdrs = Object.assign({}, defaultHdrs)
+	hdrs['Cookie'] = GT_COOKIE
+	
+	var html = request('GET', 'https://gitee.com/', 
+		{headers: hdrs}).body.toString()
+	var $ = cheerio.load(html)
+	var token = $('meta[name=csrf-token]').attr('content')
+	if (!token) return false
+	
+	hdrs['X-CSRF-Token'] = token
+	var data = 'branch=&build_directory=&force_https=true&auto_update=true'
+	url = `https://gitee.com/${name}/${repo}/pages`
+	var r = request('POST', url, {headers: hdrs, body: data})
+	return r.statusCode == 200
+}
 
 function getDesc(md) {
     var rm = /^#+ (.+?)$/m.exec(md)
