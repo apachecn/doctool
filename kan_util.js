@@ -97,6 +97,7 @@ function kanCreateRepo(
 }
 
 module.exports = {
+	defaultHdrs:   defaultHdrs,
 	formUrlEncode: formUrlEncode,
 	requestRetry:  requestRetry,
 	kanExist:      kanExist,
