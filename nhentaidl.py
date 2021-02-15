@@ -109,7 +109,7 @@ def process_img(img):
     )[1]
     return bytes(img)
 
-def gen_epub(articles, imgs=None, name=None, out_path=None):   
+def gen_epub(articles, imgs, p):   
     imgs = imgs or {}
 
     dir = path.join(tempfile.gettempdir(), uuid.uuid4().hex) 
@@ -126,19 +126,8 @@ def gen_epub(articles, imgs=None, name=None, out_path=None):
     with open(fname, 'w') as f:
         f.write(json.dumps(articles))
     
-    args = [
-        'gen-epub',
-        fname,
-        '-i',
-        img_dir,
-    ]
-    if name: args += ['-n', name]
-    if out_path: args += ['-p', out_path]
-    subp.Popen(
-        args, shell=True, 
-        stdout=subp.PIPE, 
-        stderr=subp.PIPE
-    ).communicate()
+    args = f'gen-epub "{fname}" -i "{img_dir}" -p "{p}"'
+    subp.Popen(args, shell=True).communicate()
     safe_rmdir(dir)
 
 def download(id):
@@ -172,7 +161,7 @@ def download(id):
     ]
     co = '\n'.join(co)
     articles = [{'title': info['title'], 'content': co}]
-    gen_epub(articles, imgs, None, ofname)
+    gen_epub(articles, imgs, ofname)
     
 def get_ids(html):
     root = pq(html)
