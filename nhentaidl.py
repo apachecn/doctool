@@ -204,6 +204,27 @@ def extract(fname):
     open(fname + '.json', encoding='utf-8') \
         .write(json.dumps(res))
     
+def is_gbk(ch):
+    try: 
+        ch.encode('gbk')
+        return True
+    except:
+        return False
+    
+def fix_fname(fname):
+    return ''.join([ch for ch in fname if is_gbk(ch)])
+    
+    
+def fix_fnames(dir):
+    files = os.listdir(dir)
+    
+    for f in files:
+        nf = fix_fname(f)
+        if f == nf: continue
+        print(f'{f} => {nf}')
+        f = path.join(dir, f)
+        nf = path.join(dir, nf)
+        os.rename(f, nf)
     
 def main():
     op = sys.argv[1]
@@ -220,5 +241,7 @@ def main():
         )
     elif op == 'extract':
         extract(sys.argv[2])
+    elif op == 'fix':
+        fix_fnames(sys.argv[2])
 
 if __name__ == '__main__': main()
