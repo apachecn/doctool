@@ -197,7 +197,7 @@ def extract(fname):
     res = []
     
     for l in lines:
-        rms = re.findall(RE_LINE, l)
+        rms = re.findall(RE_INFO, l)
         if len(rms) == 0: continue
         res.append(rms[-1])
         
@@ -225,6 +225,20 @@ def fix_fnames(dir):
         f = path.join(dir, f)
         nf = path.join(dir, nf)
         os.rename(f, nf)
+        
+def convert_log(fname):
+    co = open(fname, encoding='utf8').read()
+    RE_TITLE = r'上传: (.+?) \(\d+\.\d+ \w?B\)'
+    RE_META = r'META URL -> (\S+)'
+    titles = re.findall(RE_TITLE, co)
+    metas = re.findall(RE_META, co)
+    assert len(titles) == len(metas)
+    res = []
+    for t, m in zip(titles, metas):
+        res.append(f'| {t} | {m} |\n')
+    res = ''.join(res)
+    open(fname + '.md', 'w', encoding='utf8').write(res)
+    
     
 def main():
     op = sys.argv[1]
@@ -243,5 +257,7 @@ def main():
         extract(sys.argv[2])
     elif op == 'fix':
         fix_fnames(sys.argv[2])
+    elif op == 'log':
+        convert_log(sys.argv[2])
 
 if __name__ == '__main__': main()
