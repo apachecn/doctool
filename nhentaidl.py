@@ -197,11 +197,12 @@ def extract(fname):
     res = []
     
     for l in lines:
+        l = l.replace('.epub', '')
         rms = re.findall(RE_INFO, l)
         if len(rms) == 0: continue
         res.append(rms[-1])
         
-    open(fname + '.json', encoding='utf-8') \
+    open(fname + '.json', 'w', encoding='utf-8') \
         .write(json.dumps(res))
     
 def is_gbk(ch):
