@@ -90,8 +90,10 @@ def get_info(html):
     return {'title': fname_escape(title), 'imgs': imgs, 'tags': tags}
 
 def process_img(img):
+    img_ori = img
     img = np.frombuffer(img, np.uint8)
     img = cv2.imdecode(img, cv2.IMREAD_GRAYSCALE)
+    if img is None: return img_ori
     
     h, w = img.shape
     if (w > h): img = img.T[::-1]
