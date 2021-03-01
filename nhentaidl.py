@@ -231,7 +231,7 @@ def fix_fnames(dir):
         
 def convert_log(fname):
     co = open(fname, encoding='utf8').read()
-    RE_TITLE = r'上传: (.+?) \(\d+\.\d+ \w?B\)'
+    RE_TITLE = r'上传: (.+?) \([\d\.]+ \w+\)\n'
     RE_META = r'META URL -> (\S+)'
     titles = re.findall(RE_TITLE, co)
     metas = re.findall(RE_META, co)
