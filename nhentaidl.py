@@ -39,8 +39,8 @@ get_retry = lambda *args, **kwargs: \
 
 def load_existed():
     existed = []
-    if path.exists('existed.json'):
-        existed = json.loads(open('existed.json').read())
+    if path.exists('nh_existed.json'):
+        existed = json.loads(open('nh_existed.json').read())
     return set([tuple(e) for e in existed])
     
 existed = load_existed()
@@ -262,5 +262,7 @@ def main():
         fix_fnames(sys.argv[2])
     elif op == 'log':
         convert_log(sys.argv[2])
+    elif op == 'search':
+        print(check_exist(existed, sys.argv[2]))
 
 if __name__ == '__main__': main()
