@@ -46,9 +46,7 @@ def load_existed():
 existed = load_existed()
 
 def check_exist(existed, name):
-    rms = re.findall(RE_INFO, name)
-    if len(rms) == 0: return False
-    return tuple(rms[-1]) in existed
+    return tuple(extract_info(name)) in existed
 
 def fname_escape(name):
     
@@ -87,7 +85,7 @@ def get_info(html):
             .replace('t.nhentai', 'i.nhentai')
         for i in imgs
     ]
-    return {'title': fname_escape(title), 'imgs': imgs, 'tags': tags}
+    return {'title': filter_gbk(fname_escape(title)), 'imgs': imgs, 'tags': tags}
 
 def process_img(img):
     img_ori = img
@@ -193,6 +191,11 @@ def batch(fname):
     for id in ids:
         download(id)
         
+def extract_info(name):
+    rms = re.findall(RE_INFO, name)
+    if len(rms) == 0: return ['', name]
+    return rms[-1]
+        
 def extract(fname):
     lines = open(fname, encoding='utf-8').read().split('\n')
     lines = filter(None, lines)
@@ -200,9 +203,7 @@ def extract(fname):
     
     for l in lines:
         l = l.replace('.epub', '')
-        rms = re.findall(RE_INFO, l)
-        if len(rms) == 0: continue
-        res.append(rms[-1])
+        res.append(extract_info(l))
         
     open(fname + '.json', 'w', encoding='utf-8') \
         .write(json.dumps(res))
@@ -214,7 +215,7 @@ def is_gbk(ch):
     except:
         return False
     
-def fix_fname(fname):
+def filter_gbk(fname):
     return ''.join([ch for ch in fname if is_gbk(ch)])
     
     
@@ -222,12 +223,15 @@ def fix_fnames(dir):
     files = os.listdir(dir)
     
     for f in files:
-        nf = fix_fname(f)
+        nf = filter_gbk(f)
         if f == nf: continue
         print(f'{f} => {nf}')
         f = path.join(dir, f)
         nf = path.join(dir, nf)
-        os.rename(f, nf)
+        if path.exists(nf):
+            os.unlink(f)
+        else:
+            os.rename(f, nf)
         
 def convert_log(fname):
     co = open(fname, encoding='utf8').read()
@@ -256,7 +260,7 @@ def main():
             int(sys.argv[4]) if len(sys.argv) > 4 else 1,
             int(sys.argv[5]) if len(sys.argv) > 5 else 1_000_000,
         )
-    elif op == 'extract':
+    elif op in ['extract', 'ext']:
         extract(sys.argv[2])
     elif op == 'fix':
         fix_fnames(sys.argv[2])
