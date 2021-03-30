@@ -122,8 +122,7 @@ def process_file(fname):
        not fname.endswith('.epub'):
         print('请提供 EPUB 或 PDF')
         return
-    co = open(fname, 'rb').read()
-    md5 = calc_md5(co).upper()
+    md5 = calc_md5(open(fname, 'rb').read()).upper()
     print(f'md5: {md5}')
     
     url = urls['info'].replace('{md5}', md5)
@@ -135,7 +134,7 @@ def process_file(fname):
     url = urls['upload']
     mimetype = 'application/pdf' if fname.endswith('.pdf') else 'application/epub+zip'
     files = {
-        'file': (path.basename(fname), co, mimetype)
+        'file': (path.basename(fname), open(fname, 'rb'), mimetype)
     }
     r = request_retry('POST', url, files=files, headers=default_hdrs)
     if r.status_code != 200 and r.status_code != 301:
