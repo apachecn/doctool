@@ -23,7 +23,7 @@ default_hdrs = {
 series = None
 
 def request_retry(method, url, retry=10000, **kw):
-    kw.setdefault('timeout', 10)
+    kw.setdefault('timeout', 100)
     for i in range(retry):
         try:
             return requests.request(method, url, **kw)
@@ -142,13 +142,16 @@ def process_file(fname):
         return
     
     url = urls['submit'].replace('{md5}', md5)
-    html = request_retry('GET', url, headers=default_hdrs).text
-    info = get_info(html)
+    r = request_retry('GET', url, headers=default_hdrs)
+    if r.status_code != 200:
+        print(f'获取信息失败：{r.status_code}')
+        return
+    info = get_info(r.text)
     proc_info(fname, info)
     print(info)
     r = request_retry('POST', url, data=info, headers=default_hdrs)
     if r.status_code != 200 and r.status_code != 301:
-        print(f'上传失败：{r.status_code}')
+        print(f'编辑信息失败：{r.status_code}')
         return
     print('上传成功！')
     
@@ -178,4 +181,3 @@ def main():
         process_file(fname)
     
 if __name__ == '__main__': main()
-    
