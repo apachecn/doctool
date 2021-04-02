@@ -5,6 +5,7 @@ import sys
 from os import path
 from pyquery import PyQuery as pq
 import re
+from concurrent.futures import ThreadPoolExecutor
 
 RE_INFO = r'\[(.+?)\]\s*(.+?)\s*(?=\[|$)'
 
@@ -155,14 +156,21 @@ def process_file(fname):
         return
     print('上传成功！')
     
+def process_file_safe(fname):
+    try:
+        process_file(fname)
+    except Exception as ex:
+        print(ex)
+    
 def process_dir(dir):
+    pool = ThreadPoolExecutor(max_workers=3)
+    hdlrs = []
     files = os.listdir(dir)
     for f in files:
         f = path.join(dir, f)
-        try:
-            process_file(f)
-        except Exception as ex:
-            print(ex)
+        hdlrs.append(pool.submit(process_file_safe, f))
+    for h in hdlrs:
+        h.result()
     
 def main():
     global series
