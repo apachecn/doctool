@@ -16,6 +16,8 @@ import re
 # npm install -g gen-epub
 
 RE_INFO = r'\[(.+?)\]\s*(.+?)\s*(?=\[|$)'
+RE_TITLE = r'上传: (.+?) \([\d\.]+ \w+\)\n'
+RE_META = r'META URL -> (\S+)'
 
 config = {
     'hdrs': {
@@ -136,6 +138,10 @@ def download(id):
     info = get_info(html)
     print(info['title'])
     
+    if len(info['imgs']) > 150:
+        print('内容过大，跳过')
+        return
+    
     if check_exist(existed, info['title']):
         print('已存在')
         return 
@@ -196,16 +202,16 @@ def extract_info(name):
     if len(rms) == 0: return ['', name]
     return rms[-1]
         
-def extract(fname):
-    lines = open(fname, encoding='utf-8').read().split('\n')
-    lines = filter(None, lines)
-    res = []
-    
-    for l in lines:
-        l = l.replace('.epub', '')
-        res.append(extract_info(l))
-        
-    open(fname + '.json', 'w', encoding='utf-8') \
+def extract(dir):
+    res = [
+        extract_info(f.replace('.epub', ''))
+        for f in os.listdir(dir)
+        if f.endswith('.epub')
+    ]
+    ofname = (dir[:-1] \
+        if dir.endswith('/') or dir.endswith('\\') \
+        else dir) + '.json'
+    open(ofname, 'w', encoding='utf-8') \
         .write(json.dumps(res))
     
 def is_gbk(ch):
@@ -235,14 +241,16 @@ def fix_fnames(dir):
         
 def convert_log(fname):
     co = open(fname, encoding='utf8').read()
-    RE_TITLE = r'上传: (.+?) \([\d\.]+ \w+\)\n'
-    RE_META = r'META URL -> (\S+)'
-    titles = re.findall(RE_TITLE, co)
-    metas = re.findall(RE_META, co)
-    assert len(titles) == len(metas)
-    res = []
-    for t, m in zip(titles, metas):
-        res.append(f'| {t} | {m} |\n')
+    cos = co.split(' 上传: ')
+    res = ['| 文件 | 链接 |\n| --- | --- |\n']
+    for info in cos:
+        info = ' 上传: ' + info
+        title = re.search(RE_TITLE, info)
+        meta = re.search(RE_META, info)
+        if not title or not meta:
+            continue
+        res.append(f'| {title.group(1)} | {meta.group(1)} |\n')
+        
     res = ''.join(res)
     open(fname + '.md', 'w', encoding='utf8').write(res)
     
