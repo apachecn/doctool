@@ -15,7 +15,7 @@ import re
 
 # npm install -g gen-epub
 
-RE_INFO = r'\[(.+?)\]\s*(.+?)\s*(?=\[|$)'
+RE_INFO = r'\[(.+?)\]([^\[]+)'
 RE_TITLE = r'上传: (.+?) \([\d\.]+ \w+\)\n'
 RE_META = r'META URL -> (\S+)'
 
@@ -201,7 +201,7 @@ def batch(fname):
 def extract_info(name):
     rms = re.findall(RE_INFO, name)
     if len(rms) == 0: return ['', name]
-    return rms[-1]
+    return (rms[0][0], rms[0][1].strip())
         
 def extract(dir):
     res = [
