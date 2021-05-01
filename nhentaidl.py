@@ -76,7 +76,8 @@ def safe_rmdir(dir):
         
 def get_info(html):
     root = pq(html)
-    title = root('h2.title').eq(0).text().strip()
+    title = root('h2.title').eq(0).text().strip() or \
+            root('h1.title').eq(0).text().strip()
     tags = root('.tag>.name')
     tags = set((pq(t).text() for t in tags))
     imgs = root('.gallerythumb > img')
