@@ -7,7 +7,7 @@ from pyquery import PyQuery as pq
 import re
 from concurrent.futures import ThreadPoolExecutor
 
-RE_INFO = r'\[(.+?)\]\s*(.+?)\s*(?=\[|$)'
+RE_INFO = r'\[(.+?)\]([^\[]+)'
 
 urls = {
     'info': 'https://library.bz/{cate}/uploads/{md5}',
@@ -91,7 +91,7 @@ def proc_nh_info(fname, info):
     if len(rm) == 0:
         info['authors'] = '未知'
     else:
-        info['authors'] = rm[-1][0]
+        info['authors'] = rm[0][0]
     info['publisher'] = 'NHentai'
     
 
