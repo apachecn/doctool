@@ -19,16 +19,14 @@ function loadDtMap() {
     if(!fs.existsSync('dt.txt'))
         return {}
     
-    var lines = fs.readFileSync('dt.txt', 'utf-8')
-                  .split('\n')
-                  .map(x => x.trim())
-                  .filter(x => x)
-    
     var dtMap = {}
-    lines.map(x => x.split(' '))
-         .filter(x => x.length >= 2)
-         .forEach(x => dtMap[x[0]] = x[1])
-    
+    fs.readFileSync('dt.txt', 'utf-8')
+	  .split('\n')
+	  .map(x => x.trim())
+	  .filter(x => x)
+	  .map(x => x.split(' '))
+	  .filter(x => x.length >= 2)
+	  .forEach(x => dtMap[x[0]] = x[1])
     return dtMap
 }
 
