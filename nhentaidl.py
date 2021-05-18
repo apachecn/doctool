@@ -196,7 +196,8 @@ def fetch(fname, cate="", st=1, ed=1_000_000):
 def batch(fname):
     ids = filter(None, open(fname).read().split('\n'))
     for id in ids:
-        download(id)
+        try: download(id)
+        except Exception as ex: print(ex) 
         
 def extract_info(name):
     rms = re.findall(RE_INFO, name)
