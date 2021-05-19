@@ -137,7 +137,7 @@ def download(id):
     url = f'https://nhentai.net/g/{id}/'
     html = get_retry(url).text
     info = get_info(html)
-    print(info['title'])
+    print(f"id: {id}, title: {info['title']}")
     
     if len(info['imgs']) > 150:
         print('内容过大，跳过')
