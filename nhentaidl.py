@@ -139,8 +139,8 @@ def download(id):
     info = get_info(html)
     print(f"id: {id}, title: {info['title']}")
     
-    if len(info['imgs']) > 150:
-        print('内容过大，跳过')
+    if 'webtoon' in info['tags']:
+        print('跳过长条漫画')
         return
     
     if check_exist(existed, info['title']):
