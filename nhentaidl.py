@@ -142,6 +142,10 @@ def download(id):
     if 'webtoon' in info['tags']:
         print('跳过长条漫画')
         return
+        
+    if len(info['imgs']) > 600:
+        print('漫画过长，已忽略')
+        return
     
     if check_exist(existed, info['title']):
         print('已存在')
