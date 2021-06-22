@@ -30,7 +30,7 @@ function getInfo(html) {
     
     var $ = cheerio.load(html)
     var title = $('.anim_title_text h1').text()
-    var dt = $('.update2').text().replace(/-/g, '')
+    var author = $('div.anim-main_list tr:nth-child(3) a').text().trim()
     
     var $links = $('.cartoon_online_border li a')
     var toc = []
@@ -39,7 +39,7 @@ function getInfo(html) {
         toc.push('http://manhua.dmzj.com' + $link.attr('href'))
     }
 
-    return {title: fnameEscape(title), dt: dt, toc: toc}
+    return {title: fnameEscape(title), author: author, toc: toc}
 }
 
 
@@ -92,7 +92,7 @@ function download(id) {
     var url = `http://manhua.dmzj.com/${id}/`
     var html = request('GET', url).body.toString()
     var info = getInfo(html)
-    console.log(info.title, info.dt)
+    console.log(info.title, info.author)
 
     if(info.toc.length == 0) {
         console.log('已下架')
@@ -109,7 +109,7 @@ function download(id) {
             continue
         }
         
-        var p = `out/${art.title} - ${art.ch} - ${info.dt}.epub`
+        var p = `out/${art.title} - ${info.author} - ${art.ch}.epub`
         if(fs.existsSync(p)) {
             console.log('文件已存在')
             continue
