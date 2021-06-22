@@ -41,9 +41,10 @@ get_retry = lambda *args, **kwargs: \
 
 def load_existed():
     existed = []
-    if path.exists('nh_existed.json'):
-        existed = json.loads(open('nh_existed.json').read())
-    return set([tuple(e) for e in existed])
+    fname = 'nh_existed.json'
+    if path.exists(fname):
+        existed = json.loads(open(fname).read())
+    return {tuple(e) for e in existed}
     
 existed = load_existed()
 
