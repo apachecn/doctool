@@ -9,6 +9,9 @@ def process_img(img, l=4):
     assert img.ndim == 2
     
     h, w = img.shape
+    if w > h: img = img.T[::-1]
+    
+    h, w = img.shape
     if w > 1000:
         rate = 1000 / w
         nh = round(h * rate)
