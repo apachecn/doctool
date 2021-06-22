@@ -26,6 +26,17 @@ function fnameEscape(name){
                
 }
 
+function loadExisted() {
+	var existed = []
+	var fname = 'dmzj_existed.json'
+	if (fs.existsSync(fname)) {
+		existed = JSON.parse(fs.readFileSync(fname, 'utf-8'))
+	}
+	return new Set(existed)
+}
+
+var existed = loadExisted()
+
 function getInfo(html) {
     
     var $ = cheerio.load(html)
@@ -109,7 +120,12 @@ function download(id) {
             continue
         }
         
-        var p = `out/${art.title} - ${info.author} - ${art.ch}.epub`
+        var fname = `${art.title} - ${info.author} - ${art.ch}.epub`
+        if (existed.has(fname)) {
+            console.log('文件已存在')
+            continue
+        }
+        var p = `out/${fname}`
         if(fs.existsSync(p)) {
             console.log('文件已存在')
             continue
