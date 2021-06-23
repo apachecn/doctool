@@ -120,12 +120,12 @@ function download(id) {
             continue
         }
         
-        var fname = `${art.title} - ${info.author} - ${art.ch}.epub`
-        if (existed.has(fname)) {
+        var name = `${art.title} - ${info.author} - ${art.ch}`
+        if (existed.has(name)) {
             console.log('文件已存在')
             continue
         }
-        var p = `out/${fname}`
+        var p = `out/${name}.epub`
         if(fs.existsSync(p)) {
             console.log('文件已存在')
             continue
