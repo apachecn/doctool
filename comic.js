@@ -50,7 +50,7 @@ function getInfo(html) {
         toc.push('http://manhua.dmzj.com' + $link.attr('href'))
     }
 
-    return {title: fnameEscape(title), author: author, toc: toc}
+    return {title: fnameEscape(title), author: fnameEscape(author), toc: toc}
 }
 
 
