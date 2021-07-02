@@ -75,7 +75,10 @@ function download(name) {
 		var realUrl = notebooks[0].downloadUrl
 		console.log(`url: ${realUrl}`)
         var co = request('GET', realUrl).body.toString()
-		co = processImg(getBody(co), imgs, {pageUrl: realUrl})
+		co = processImg(getBody(co), imgs, {
+			pageUrl: realUrl,
+			imgPrefix: '../Images/',
+		})
         var from = `<p>From: <a href='${url}'>${url}</a></p>`
         var score = ''
         if(it.bestPublicScore)
