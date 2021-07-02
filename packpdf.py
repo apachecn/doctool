@@ -26,8 +26,8 @@ def dump_pdf(fname, dir):
     doc = fitz.open(fname)
     
     img_idcs = []
-    for i in range(1, doc._getXrefLength()):
-        xref = doc._getXrefString(i)
+    for i in range(1, doc.xref_length()):
+        xref = doc.xref_object(i)
         
         is_xobj = re.search(RE_XOBJ, xref)
         is_img = re.search(RE_IMG, xref)
@@ -36,6 +36,7 @@ def dump_pdf(fname, dir):
     l = len(str(len(img_idcs) - 1))
     
     for i, j in enumerate(img_idcs):
+        print(f'no: {i}, xref: {j}')
         img = fitz.Pixmap(doc, j)
         if img.n >= 5:
             pix = fitz.Pixmap(fitz.csRGB, pix)
