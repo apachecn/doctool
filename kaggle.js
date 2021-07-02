@@ -4,6 +4,7 @@ npm install cheerio
 npm install gen-epub -g
 npm install epub-crawler -g
 pip install imgyaso
+wget https://raw.githubusercontent.com/apachecn/doctool/master/util.js
 */
 
 var fs = require('fs')
