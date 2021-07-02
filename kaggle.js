@@ -1,4 +1,6 @@
 /*
+apt update -y
+apt install -y libgl1
 npm install sync-request
 npm install cheerio
 npm install gen-epub -g
