@@ -1,4 +1,4 @@
-var request = require('sync-request')
+var request = require('epub-crawler/src/util').requestRetry
 var fs = require('fs')
 var cheerio = require('cheerio')
 var path = require('path')
