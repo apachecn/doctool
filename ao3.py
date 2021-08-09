@@ -1,6 +1,6 @@
 import requests
 from pyquery import PyQuery as pq
-from datetime import datetime
+from datetime import datetime, timedelta
 import sys, re, os, json
 import subprocess as subp
 from os import path
@@ -77,18 +77,19 @@ def batch(fname):
     gen_epub(articles, None, ofname)
     
 
-def fetch(fname, st=None, ed=None):
-    st = datetime.now() if st is None \
-         else datetime.strptime(st, '%Y%m%d')
-    ed = datetime.now() if ed is None \
-         else datetime.strptime(ed,'%Y%m%d')
+def fetch(fname, st=None, ed=None, pg=1):
     now = datetime.now()
+    st = now if st is None \
+         else datetime.strptime(st, '%Y%m%d')
+    ed = now if ed is None \
+         else datetime.strptime(ed,'%Y%m%d')
+    ed += timedelta(1)
     days_st = (now - ed).days
     days_ed = (now - st).days
     print(f'days start: {days_st}, days end: {days_ed}')
-    f = open(fname, 'w')
+    f = open(fname, 'a')
     
-    i = 1
+    i = pg
     while True:
         print(f'page: {i}')
         url = f'https://archiveofourown.org/works/search?utf8=%E2%9C%93&commit=Search&page={i}&work_search%5Brevised_at%5D={days_st}-{days_ed}+days&work_search%5Blanguage_id%5D=zh&work_search%5Bsort_direction%5D=desc&work_search%5Bsort_column%5D=revised_at'
@@ -138,6 +139,7 @@ def main():
             sys.argv[2],
             sys.argv[3] if len(sys.argv) > 3 else None,
             sys.argv[4] if len(sys.argv) > 4 else None,
+            int(sys.argv[5]) if len(sys.argv) > 5 else 1,
         )
     elif op == 'batch':
         batch(sys.argv[2])
