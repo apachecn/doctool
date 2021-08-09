@@ -69,7 +69,7 @@ def get_ids(html):
 def batch(fname):
     
     ids = open(fname).read().split('\n')
-    ids = filter(None, map(lambda x: x.strip(), ids))
+    ids = list(filter(None, map(lambda x: x.strip(), ids)))
     
     name = path.basename(fname)
     name = re.sub(r'\.\w+$', '', name)
@@ -81,7 +81,7 @@ def batch(fname):
         
     articles = [{'title': name, 'content': ''}]
     i = 1
-    while i < range(len(ids)):
+    while i < len(ids):
         id = ids[i]
         print(f'id: {id}')
         url = f'https://{host}/works/{id}?view_adult=true'
