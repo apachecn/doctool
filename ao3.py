@@ -6,6 +6,9 @@ import subprocess as subp
 from os import path
 import tempfile
 import uuid
+import time
+
+host = 'archiveofourown.org'
 
 pr = {
     # 'http': 'https://localhost:1080',
@@ -77,17 +80,25 @@ def batch(fname):
     safe_mkdir('out')
         
     articles = [{'title': name, 'content': ''}]
-    for id in ids:
+    i = 1
+    while i < range(len(ids)):
+        id = ids[i]
         print(f'id: {id}')
-        url = f'https://archiveofourown.org/works/{id}?view_adult=true'
-        html = get_retry(
+        url = f'https://{host}/works/{id}?view_adult=true'
+        r = get_retry(
             url, 
             headers=headers, 
             proxies=pr,
             timeout=8,
-        ).text
+        )
+        if r.status_code == 429:
+            print('HTTP 429')
+            time.sleep(10)
+            continue
+        html = r.text
         art = get_article(html)
         articles.append(art)
+        i += 1
         
     gen_epub(articles, None, ofname)
     
@@ -107,14 +118,19 @@ def fetch(fname, st=None, ed=None, pg=1):
     i = pg
     while True:
         print(f'page: {i}')
-        url = f'https://archiveofourown.org/works/search?utf8=%E2%9C%93&commit=Search&page={i}&work_search%5Brevised_at%5D={days_st}-{days_ed}+days&work_search%5Blanguage_id%5D=zh&work_search%5Bsort_direction%5D=desc&work_search%5Bsort_column%5D=revised_at'
+        url = f'https://{host}/works/search?utf8=%E2%9C%93&commit=Search&page={i}&work_search%5Brevised_at%5D={days_st}-{days_ed}+days&work_search%5Blanguage_id%5D=zh&work_search%5Bsort_direction%5D=desc&work_search%5Bsort_column%5D=revised_at'
         
-        html = get_retry(
+        r = get_retry(
             url, 
             headers=headers, 
             proxies=pr,
             timeout=8,
-        ).text
+        )
+        if r.status_code == 429:
+            print('HTTP 429')
+            time.sleep(10)
+            continue
+        html = r.text
         ids = get_ids(html)
         if len(ids) == 0: break
         for id in ids:
