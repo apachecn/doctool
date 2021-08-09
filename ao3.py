@@ -8,13 +8,28 @@ import tempfile
 import uuid
 
 pr = {
-    'http': 'https://localhost:1080',
-    'https': 'https://localhost:1080',
+    # 'http': 'https://localhost:1080',
+    # 'https': 'https://localhost:1080',
 }
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36',
 }
+
+def request_retry(method, url, retry=10, **kw):
+    kw.setdefault('timeout', 10)
+    for i in range(retry):
+        try:
+            return requests.request(method, url, **kw)
+        except KeyboardInterrupt as e:
+            raise e
+        except Exception as e:
+            print(f'{url} retry {i}')
+            if i == retry - 1: raise e
+
+get_retry = lambda *args, **kwargs: \
+    request_retry('GET', *args, **kwargs)
+
 
 def get_article(html):
     root = pq(html)
@@ -65,7 +80,7 @@ def batch(fname):
     for id in ids:
         print(f'id: {id}')
         url = f'https://archiveofourown.org/works/{id}?view_adult=true'
-        html = requests.get(
+        html = get_retry(
             url, 
             headers=headers, 
             proxies=pr,
@@ -94,7 +109,7 @@ def fetch(fname, st=None, ed=None, pg=1):
         print(f'page: {i}')
         url = f'https://archiveofourown.org/works/search?utf8=%E2%9C%93&commit=Search&page={i}&work_search%5Brevised_at%5D={days_st}-{days_ed}+days&work_search%5Blanguage_id%5D=zh&work_search%5Bsort_direction%5D=desc&work_search%5Bsort_column%5D=revised_at'
         
-        html = requests.get(
+        html = get_retry(
             url, 
             headers=headers, 
             proxies=pr,
