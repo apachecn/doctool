@@ -93,12 +93,17 @@ def download(ori_st=None, ori_ed=None, pg=1):
     ori_st = ori_st or now.strftime('%Y%m%d')
     ori_ed = ori_ed or now.strftime('%Y%m%d')
     
-    fname = f'out/ao3_{ori_st}_{ori_ed}.epub'
+    fname = f'out/ao3_{ori_st}.epub' \
+        if ori_st == ori_ed \
+        else f'out/ao3_{ori_st}_{ori_ed}.epub'
     if path.exists(fname):
         print('已存在')
         return
+    title = f'ao3 {ori_st}' \
+        if ori_st == ori_ed \
+        else f'ao3 {ori_st} {ori_ed}'
     articles = [{
-        'title': f'ao3_{ori_st}_{ori_ed}',
+        'title': title,
         'content': '',
     }]
     
@@ -134,6 +139,18 @@ def download(ori_st=None, ori_ed=None, pg=1):
         
     gen_epub(articles, None, fname)
 
+def dl_month(year, mon):
+    ndays = calendar.monthrange(year, mon)[1]
+    for d in range(1, ndays + 1):
+        dt = f'{year}{mon:02d}{d:02d}'
+        print(dt)
+        try: download(dt, dt)
+        except Exception as ex: print(ex)
+        
+def dl_year(year):
+    for m in range(1, 13):
+        dl_month(year, m)
+    
 def gen_epub(articles, imgs, p):   
     imgs = imgs or {}
 
@@ -163,5 +180,9 @@ def main():
             sys.argv[3] if len(sys.argv) > 3 else None,
             int(sys.argv[4]) if len(sys.argv) > 4 else 1,
         )
+    elif op == 'dlm':
+        dl_month(int(sys.argv[2]), int(sys.argv[3]))
+    elif op == 'dly':
+        dl_year(int(sys.argv[2]))
         
 if __name__ == '__main__': main()
