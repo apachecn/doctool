@@ -7,6 +7,7 @@ from os import path
 import tempfile
 import uuid
 import time
+import calendar
 
 host = 'archiveofourown.org'
 
@@ -65,21 +66,8 @@ def get_ids(html):
         pq(l).attr('href').split('/')[-1]
         for l in el_links
     ]
-
-def batch(fname):
     
-    ids = open(fname).read().split('\n')
-    ids = list(filter(None, map(lambda x: x.strip(), ids)))
-    
-    name = path.basename(fname)
-    name = re.sub(r'\.\w+$', '', name)
-    ofname = f'out/{name}.epub'
-    if path.exists(ofname):
-        print(f'{ofname} 已存在')
-        return
-    safe_mkdir('out')
-        
-    articles = [{'title': name, 'content': ''}]
+def dl_ids(ids, articles):
     i = 1
     while i < len(ids):
         id = ids[i]
@@ -99,21 +87,27 @@ def batch(fname):
         art = get_article(html)
         articles.append(art)
         i += 1
-        
-    gen_epub(articles, None, ofname)
-    
 
-def fetch(fname, st=None, ed=None, pg=1):
+def download(ori_st=None, ori_ed=None, pg=1):
     now = datetime.now()
-    st = now if st is None \
-         else datetime.strptime(st, '%Y%m%d')
-    ed = now if ed is None \
-         else datetime.strptime(ed,'%Y%m%d')
+    ori_st = ori_st or now.strftime('%Y%m%d')
+    ori_ed = ori_ed or now.strftime('%Y%m%d')
+    
+    fname = f'out/ao3_{ori_st}_{ori_ed}.epub'
+    if path.exists(fname):
+        print('已存在')
+        return
+    articles = [{
+        'title': f'ao3_{ori_st}_{ori_ed}',
+        'content': '',
+    }]
+    
+    st = datetime.strptime(ori_st, '%Y%m%d')
+    ed = datetime.strptime(ori_ed,'%Y%m%d')
     ed += timedelta(1)
     days_st = (now - ed).days
     days_ed = (now - st).days
     print(f'days start: {days_st}, days end: {days_ed}')
-    f = open(fname, 'a')
     
     i = pg
     while True:
@@ -134,13 +128,11 @@ def fetch(fname, st=None, ed=None, pg=1):
         ids = get_ids(html)
         if len(ids) == 0: break
         for id in ids:
-            print(f'id: {id}')
-            f.write(id + '\n')
-            f.flush()
+            dl_ids(ids, articles)
         
         i += 1
         
-    f.close()
+    gen_epub(articles, None, fname)
 
 def gen_epub(articles, imgs, p):   
     imgs = imgs or {}
@@ -165,14 +157,11 @@ def gen_epub(articles, imgs, p):
 
 def main():
     op = sys.argv[1]
-    if op == 'fetch':
-        fetch(
-            sys.argv[2],
+    if op in ['dl', 'download']:
+        download(
+            sys.argv[2] if len(sys.argv) > 2 else None,
             sys.argv[3] if len(sys.argv) > 3 else None,
-            sys.argv[4] if len(sys.argv) > 4 else None,
-            int(sys.argv[5]) if len(sys.argv) > 5 else 1,
+            int(sys.argv[4]) if len(sys.argv) > 4 else 1,
         )
-    elif op == 'batch':
-        batch(sys.argv[2])
         
 if __name__ == '__main__': main()
