@@ -60,7 +60,7 @@ def gen_pdf(fname, dir):
     with open(fname, 'wb') as f:
         f.write(pdf)
 
-def process_img(img, size=1440):
+def process_img(img, size=1900):
     # check grayscale
     assert img.ndim == 2
     
@@ -81,8 +81,9 @@ is_pic = lambda s: s.endswith('.jpg') or \
                    s.endswith('.png') or \
                    s.endswith('.gif')
     
-def process_dir(dir, **kwargs):
+def process_dir(args):
     
+    dir = args.fname
     if dir.endswith('\\') or dir.endswith('/'): dir = dir[:-1]
     p = path.join(path.dirname(dir), path.basename(dir) + '.pdf')
     if path.exists(p):
@@ -95,7 +96,7 @@ def process_dir(dir, **kwargs):
         print(f)
         f = path.join(dir, f)
         img = cv2.imdecode(np.fromfile(f, np.uint8), cv2.IMREAD_GRAYSCALE)
-        img = process_img(img, size=kwargs['size'])
+        img = process_img(img, size=args.size)
         os.unlink(f)
         nf = re.sub(r'\.\w+$', '', f) + '.png'
         cv2.imwrite(nf, img, [
@@ -105,15 +106,17 @@ def process_dir(dir, **kwargs):
 
     gen_pdf(p, dir)
     
-def process_pdf(fname, **kwargs):
+def process_pdf(args):
     
     dir = path.join(tempfile.gettempdir(), str(time.time()))
     os.mkdir(dir)
+    fname = args.fname
     print(f'{fname} 导出中...')
     dump_pdf(fname, dir)
     print(f'{fname} 导出完毕')
     
-    process_dir(dir, **kwargs)
+    args.fname = dir
+    process_dir(args)
     shutil.rmtree(dir)
     os.rename(fname, fname + '.bak')
     shutil.move(dir + '.pdf', fname)
@@ -122,13 +125,13 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("fname", help="pdf or dir name")
-    parser.add_argument("-s", "--size", type=int, default=1440, help="width of pics")
+    parser.add_argument("-s", "--size", type=int, default=1900, help="width of pics")
     args = parser.parse_args()
     
     if path.isdir(args.fname):
-        process_dir(args.fname, size=args.size)
+        process_dir(args)
     elif args.fname.endswith('.pdf'):
-        process_pdf(args.fname, size=args.size)
+        process_pdf(args)
     else:
         print('请提供目录或 PDF')
         
