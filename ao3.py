@@ -99,6 +99,7 @@ def download(ori_st=None, ori_ed=None, pg=1):
     if path.exists(fname):
         print('已存在')
         return
+    safe_mkdir('out')
     title = f'ao3 {ori_st}' \
         if ori_st == ori_ed \
         else f'ao3 {ori_st} {ori_ed}'
