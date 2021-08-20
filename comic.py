@@ -165,10 +165,21 @@ def download(id):
     for url in info['toc']:
         download_ch(url, info)
         
+def download_safe(id):
+    try: download(id)
+    except Exception as ex: print(ex)
+        
+def batch(fname):
+    lines = open(fname, encoding='utf-8').read().split('\n')
+    lines = filter(None, map(lambda x: x.strip(), lines))
+    for id in lines:
+        download_safe(id)
+        
 def main():
     cmd = sys.argv[1]
     arg = sys.argv[2]
     
     if cmd == 'download' or cmd == 'dl': download(arg)
+    elif cmd == 'batch': batch(arg)
     
 if __name__ == '__main__': main()
