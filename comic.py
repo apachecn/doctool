@@ -203,11 +203,38 @@ def batch(fname):
         hdls += part
     for h in hdls: h.result()
         
+def fetch(fname, st, ed):
+    f = open(fname, 'a')
+    
+    stop = False
+    i = 1
+    while True:
+        if stop: break
+        print(f'page: {i}')
+        url = f'http://sacg.dmzj.com/mh/index.php?c=category&m=doSearch&status=0&reader_group=0&zone=2304&initial=all&type=0&_order=t&p={i}&callback=c'
+        res = request_retry('GET', url, headers=headers).text
+        j = json.loads(res[2:-2])
+        if not j.get('result'): break
+        for bk in j['result']:
+            id = bk['comic_url'][1:-1]
+            dt = bk['last_update_date'].replace('-', '')
+            if ed and dt > ed: 
+                continue
+            if st and dt < st: 
+                stop = True
+                break
+            print(id, dt)
+            f.write(id + '\n')
+        i += 1
+        
+    f.close()
+        
 def main():
     cmd = sys.argv[1]
     arg = sys.argv[2]
     
     if cmd == 'download' or cmd == 'dl': download(arg)
     elif cmd == 'batch': batch(arg)
+    elif cmd == 'fetch': fetch(arg, sys.argv[3], sys.argv[4])
     
 if __name__ == '__main__': main()
