@@ -13,6 +13,10 @@ import tempfile
 import json
 import uuid
 import subprocess as subp
+from concurrent.futures import ThreadPoolExecutor
+
+ch_pool = ThreadPoolExecutor(5)
+img_pool = ThreadPoolExecutor(5)
 
 headers = {
     'Referer': 'http://manhua.dmzj.com/',
@@ -122,6 +126,16 @@ def process_img(img, l=4):
     img = cv2.imencode('.png', img, [cv2.IMWRITE_PNG_COMPRESSION, 9])[1]
     return bytes(img)
     
+def tr_download_img(url, imgs, k):
+    print(f'pic: {url}')
+    img = request_retry('GET', url, headers=headers).content
+    img = process_img(img)
+    imgs[k] = img
+    
+def download_ch_safe(url, info):
+    try: download_ch(url, info)
+    except Exception as ex: print(ex)
+    
 def download_ch(url, info):
     print(f'ch: {url}')
     html = request_retry('GET', url, headers=headers).text
@@ -138,11 +152,12 @@ def download_ch(url, info):
     safe_mkdir('out')
     
     imgs = {}
+    hdls = []
     for i, img_url in enumerate(art['pics']):
-        print(f'pic: {img_url}')
-        img = request_retry('GET', img_url, headers=headers).content
-        img = process_img(img)
-        imgs[f'{i}.png'] = img
+        hdl = img_pool.submit(tr_download_img, img_url, imgs, f'{i}.png')
+        hdls.append(hdl)
+    for h in hdls:
+        h.result()
         
     co = '\r\n'.join([
         f"<p><img src='../Images/{i}.png' width='100%' /></p>"
@@ -152,7 +167,7 @@ def download_ch(url, info):
     gen_epub(articles, imgs, ofname)
     
     
-def download(id):
+def download(id, block=True):
     url = f'http://manhua.dmzj.com/{id}/'
     html = request_retry('GET', url, headers=headers).text
     info = get_info(html)
@@ -160,20 +175,33 @@ def download(id):
     
     if len(info['toc']) == 0:
         print('已下架')
-        return
+        return []
         
+    hdls = []
     for url in info['toc']:
-        download_ch(url, info)
+        hdl = ch_pool.submit(download_ch_safe, url, info)
+        hdls.append(hdl)
+    if block:
+        for h in hdls: h.result()
+        hdls = []
+    return hdls
+    
         
-def download_safe(id):
-    try: download(id)
-    except Exception as ex: print(ex)
+def download_safe(id, block=True):
+    try: 
+        return download(id, block)
+    except Exception as ex: 
+        print(ex)
+        return []
         
 def batch(fname):
     lines = open(fname, encoding='utf-8').read().split('\n')
     lines = filter(None, map(lambda x: x.strip(), lines))
+    hdls = []
     for id in lines:
-        download_safe(id)
+        part = download_safe(id, False)
+        hdls += part
+    for h in hdls: h.result()
         
 def main():
     cmd = sys.argv[1]
