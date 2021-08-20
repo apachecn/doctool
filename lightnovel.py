@@ -7,6 +7,7 @@ import re
 import tempfile
 import uuid
 import json
+from concurrent.futures import ThreadPoolExecutor
 import requests
 from pyquery import PyQuery as pq
 
@@ -138,10 +139,18 @@ def gen_epub(articles, imgs, p):
     subp.Popen(args, shell=True).communicate()
     safe_rmdir(dir)
     
+def batch(fname):
+    lines = open(fname, encoding='utf-8').read().split('\n')
+    lines = filter(None, map(lambda x: x.strip(), lines))
+    pool = ThreadPoolExecutor(5)
+    for id in lines:
+        pool.submit(download, id.split(' ')[0])
+    
 def main():
     cmd = sys.argv[1]
     arg = sys.argv[2]
     if cmd == 'dl' or cmd == 'download': download(arg)
+    elif cmd == 'batch': batch(arg)
     
     
 if __name__ == '__main__': main()  
