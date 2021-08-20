@@ -146,11 +146,53 @@ def batch(fname):
     for id in lines:
         pool.submit(download, id.split(' ')[0])
     
+def get_toc(html):
+    root = pq(html)
+    el_links = root('table.grid b a')
+    el_dts = root('table.grid div > div:nth-child(2) > p:nth-child(3)')
+    res = []
+    for i in range(len(el_links)):
+        id = re.search(r'/(\d+)\.htm', el_links.eq(i).attr('href')).group(1)
+        dt = el_dts.eq(i).text().split('/')[0][3:].replace('-', '')
+        if dt != '':
+            res.append({'id': id, 'dt': dt})
+    return res
+        
+    
+def fetch(fname, st, ed, with_dt=False):
+    ofile = open(fname, 'a', encoding='utf-8')
+    
+    stop = False
+    i = 1
+    while True:
+        if stop: break
+        print(f'page: {i}')
+        url = f'https://www.wenku8.net/modules/article/index.php?page={i}'
+        html = request_retry('GET', url, headers=headers).content.decode('gbk')
+        toc = get_toc(html)
+        if len(toc) == 0: break
+        for bk in toc:
+            if ed and bk['dt'] > ed:
+                continue
+            if st and bk['dt'] < st:
+                stop = True
+                break
+            print(bk['id'], bk['dt'])
+            if with_dt:
+                ofile.write(bk['id'] + ' ' + bk['dt'] + '\n')
+            else:
+                ofile.write(bk['id'] + '\n')
+        i += 1
+        
+    ofile.close()
+    
 def main():
     cmd = sys.argv[1]
     arg = sys.argv[2]
     if cmd == 'dl' or cmd == 'download': download(arg)
     elif cmd == 'batch': batch(arg)
+    elif cmd == 'fetch': fetch(arg, sys.argv[3], sys.argv[4])
+    elif cmd == 'fetchdt': fetch(arg, sys.argv[3], sys.argv[4], True)
     
     
 if __name__ == '__main__': main()  
