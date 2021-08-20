@@ -229,6 +229,39 @@ def fetch(fname, st, ed):
         
     f.close()
         
+def pack(dir):
+    if not path.isdir(dir):
+        print('请输入目录名')
+        return
+        
+    ofname = (dir[:-1] 
+        if dir.endswith('\\') or dir.endswith('/')
+        else dir) + '.epub'
+    if path.exists(ofname):
+        print('文件已存在')
+        return
+        
+    is_pic = lambda x: x.endswith('.png') or \
+        x.endswith('.jpg') or \
+        x.endswith('.jpeg') or \
+        x.endswith('.gif') 
+    files = filter(ispic, os.listdir(dir))
+    
+    imgs = {}
+    for i, f in enumerate(files):
+        print(f)
+        f = path.join(dir, f)
+        img = open(f, 'rb').read()
+        img = process_img(img)
+        imgs[f'{i}.png'] = img
+        
+    co = '\r\n'.join([
+        f"<p><img src='../Images/{i}.png' width='100%' /></p>"
+        for i in range(len(imgs))
+    ])
+    articles = [{'title': path.basename(dir), 'content': co}]
+    gen_epub(articles, imgs, ofname)
+        
 def main():
     cmd = sys.argv[1]
     arg = sys.argv[2]
@@ -236,5 +269,6 @@ def main():
     if cmd == 'download' or cmd == 'dl': download(arg)
     elif cmd == 'batch': batch(arg)
     elif cmd == 'fetch': fetch(arg, sys.argv[3], sys.argv[4])
+    elif cmd == 'pack': pack(arg)
     
 if __name__ == '__main__': main()
