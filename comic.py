@@ -14,6 +14,7 @@ import json
 import uuid
 import subprocess as subp
 from concurrent.futures import ThreadPoolExecutor
+from GenEpub import gen_epub
 
 ch_pool = ThreadPoolExecutor(5)
 img_pool = ThreadPoolExecutor(5)
@@ -86,28 +87,7 @@ def safe_mkdir(dir):
 def safe_rmdir(dir):
     try: shutil.rmtree(dir)
     except: pass
-    
-def gen_epub(articles, imgs, p):   
-    imgs = imgs or {}
-
-    dir = path.join(tempfile.gettempdir(), uuid.uuid4().hex) 
-    safe_mkdir(dir)
-    img_dir = path.join(dir, 'img')
-    safe_mkdir(img_dir)
-    
-    for fname, img in imgs.items():
-        fname = path.join(img_dir, fname)
-        with open(fname, 'wb') as f:
-            f.write(img)
-    
-    fname = path.join(dir, 'articles.json')
-    with open(fname, 'w') as f:
-        f.write(json.dumps(articles))
-    
-    args = f'gen-epub "{fname}" -i "{img_dir}" -p "{p}"'
-    subp.Popen(args, shell=True).communicate()
-    safe_rmdir(dir)
-    
+        
 def process_img(img, l=4):
     img = np.frombuffer(img, np.uint8)
     img = cv2.imdecode(img, cv2.IMREAD_GRAYSCALE)
@@ -164,7 +144,7 @@ def download_ch(url, info):
         for i in range(len(imgs))
     ])
     articles = [{'title': f"{art['title']} - {art['ch']}", 'content': co}]
-    gen_epub(articles, imgs, ofname)
+    gen_epub(articles, imgs, None, ofname)
     
     
 def download(id, block=True):
