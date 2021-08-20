@@ -139,12 +139,19 @@ def gen_epub(articles, imgs, p):
     subp.Popen(args, shell=True).communicate()
     safe_rmdir(dir)
     
+def download_safe(id):
+    try: download(id)
+    except Exception as ex: print(ex)
+    
 def batch(fname):
     lines = open(fname, encoding='utf-8').read().split('\n')
     lines = filter(None, map(lambda x: x.strip(), lines))
     pool = ThreadPoolExecutor(5)
+    hdls = []
     for id in lines:
-        pool.submit(download, id.split(' ')[0])
+        hdl = pool.submit(download_safe, id.split(' ')[0])
+        hdls.append(hdl)
+    for h in hdls: h.result()
     
 def get_toc(html):
     root = pq(html)
