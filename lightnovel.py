@@ -10,6 +10,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 import requests
 from pyquery import PyQuery as pq
+from GenEpub import gen_epub
 
 cookie = os.environ.get('WK8_COOKIE', '')
 
@@ -112,32 +113,11 @@ def download(id):
     text = request_retry('GET', url, headers=headers).content.decode('utf-8')
     chs = format_text(text)
     articles += chs
-    gen_epub(articles, {}, ofname)
+    gen_epub(articles, {}, None, ofname)
     
 def safe_rmdir(dir):
     try: shutil.rmtree(dir)
     except: pass
-    
-def gen_epub(articles, imgs, p):   
-    imgs = imgs or {}
-
-    dir = path.join(tempfile.gettempdir(), uuid.uuid4().hex) 
-    safe_mkdir(dir)
-    img_dir = path.join(dir, 'img')
-    safe_mkdir(img_dir)
-    
-    for fname, img in imgs.items():
-        fname = path.join(img_dir, fname)
-        with open(fname, 'wb') as f:
-            f.write(img)
-    
-    fname = path.join(dir, 'articles.json')
-    with open(fname, 'w') as f:
-        f.write(json.dumps(articles))
-    
-    args = f'gen-epub "{fname}" -i "{img_dir}" -p "{p}"'
-    subp.Popen(args, shell=True).communicate()
-    safe_rmdir(dir)
     
 def download_safe(id):
     try: download(id)
