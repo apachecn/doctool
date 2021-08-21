@@ -25,9 +25,9 @@ def load_dt_map():
     dt_map = {}
     lines = open('dt.txt', encoding='utf-8') \
         .read().split('\n')
-    lines = filter(None, map(lambda x: x.strip()))
+    lines = filter(None, map(lambda x: x.strip(), lines))
     lines = filter(lambda x: len(x) >= 2, 
-        map(lambda x: x.split(' ')))
+        map(lambda x: x.split(' '), lines))
     for l in lines: dt_map[l[0]] = l[1]
     return dt_map
     
@@ -141,8 +141,12 @@ def get_toc(html):
     for i in range(len(el_links)):
         id = re.search(r'/(\d+)\.htm', el_links.eq(i).attr('href')).group(1)
         dt = el_dts.eq(i).text().split('/')[0][3:].replace('-', '')
-        if dt != '':
-            res.append({'id': id, 'dt': dt})
+        res.append({'id': id, 'dt': dt})
+    for i in range(1, len(res)):
+        res[i]['dt'] = res[i]['dt'] or res[i - 1]['dt']
+    for i in range(len(res) - 2, -1, -1):
+        res[i]['dt'] = res[i]['dt'] or res[i + 1]['dt']
+    res = [r for r in res if r['dt']]
     return res
         
     
