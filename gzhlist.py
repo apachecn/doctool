@@ -18,6 +18,7 @@ def main():
     fake_id = j['list'][0]['fakeid']
     
     ofile = open(f'wx_{name}.txt', 'a')
+    wait = 10
     i = (start - 1) * 5
     while True:
         print(f'page: {i // 5 + 1}')
@@ -25,13 +26,15 @@ def main():
         j = requests.get(url, headers=headers).json()
         print(j)
         if j['base_resp']['ret'] == 200013:
-            time.sleep(10)
+            time.sleep(wait)
+            wait += 10
             continue
         if len(j['app_msg_list']) == 0:
             break
         for it in j['app_msg_list']:
             print(it['link'])
             ofile.write(it['link'] + '\n')
+        wait = 10
         i += 5
     ofile.close()
     print('done...')
