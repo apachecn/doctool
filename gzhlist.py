@@ -6,44 +6,49 @@ import sys
 import time
 import re
 
-cookie = os.environ.get('WX_COOKIE', '')
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
+}
 
-headers = {'Cookie': cookie}
+def parse_kv(text):
+    res = {}
+    for kv in text.split('&'):
+        pos = kv.find('=')
+        if pos == -1: continue
+        res[kv[:pos]] = kv[pos+1:]
+    return res
 
 def main():
-    name = sys.argv[1]
+    param = parse_kv(sys.argv[1])
     start = int(sys.argv[2]) if len(sys.argv) > 2 else 1
-    url = f'https://mp.weixin.qq.com'
-    r = requests.get(url, headers=headers, allow_redirects=False)
-    loc = r.headers.get('Location', '')
-    m = re.search(r'token=(\d+)', loc)
-    if not m:
-        print('token 获取失败')
-        return
-    token = m.group(1)
+    biz = param.get('__biz', '')
+    uin = param.get('uin', '')
+    key = param.get('key', '')
+    pass_ticket = param.get('pass_ticket', '')
+    appmsg_token = param.get('appmsg_token', '')
+    print(param)
     
-    url = f'https://mp.weixin.qq.com/cgi-bin/searchbiz?action=search_biz&begin=0&count=1&query={quote_plus(name)}&token={token}&lang=zh_CN&f=json&ajax=1'
-    j = requests.get(url, headers=headers).json()
-    fake_id = j['list'][0]['fakeid']
-    
-    ofile = open(f'wx_{name}.txt', 'a')
+    ofile = open(f'wx_{biz}.txt', 'a')
     wait = 10
-    i = (start - 1) * 5
+    i = (start - 1) * 10
     while True:
-        print(f'page: {i // 5 + 1}')
-        url = f'https://mp.weixin.qq.com/cgi-bin/appmsg?action=list_ex&begin={i}&count=5&fakeid={fake_id}&type=9&query=&token={token}&lang=zh_CN&f=json&ajax=1'
+        print(f'page: {i // 10 + 1}')
+        url = f'https://mp.weixin.qq.com/mp/profile_ext?action=getmsg&__biz={biz}&f=json&offset={i}&count=10&is_ok=1&scene=&uin={uin}&key={key}&pass_ticket={pass_ticket}&wxtoken=&appmsg_token={appmsg_token}&x5=0&f=json'
         j = requests.get(url, headers=headers).json()
-        if j['base_resp']['ret'] == 200013:
+        if j['ret'] != 0:
+            print(j['errmsg'])
             time.sleep(wait)
             wait += 10
             continue
-        if len(j['app_msg_list']) == 0:
+        if not j['can_msg_continue']:
             break
-        for it in j['app_msg_list']:
-            print(it['link'])
-            ofile.write(it['link'] + '\n')
+        li = json.loads(j['general_msg_list'])
+        for it in li['list']:
+            url = it['app_msg_ext_info']['content_url']
+            print(url)
+            ofile.write(url + '\n')
         wait = 10
-        i += 5
+        i += 10
     ofile.close()
     print('done...')
     
