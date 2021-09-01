@@ -26,9 +26,17 @@ def main():
     key = param.get('key', '')
     pass_ticket = param.get('pass_ticket', '')
     appmsg_token = param.get('appmsg_token', '')
-    print(param)
     
-    ofile = open(f'wx_{biz}.txt', 'a')
+    url = f'https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz={biz}&uin={uin}&key={key}&devicetype=Windows+Server+2016+x64&version=63030532&lang=zh_CN&a8scene=7&pass_ticket={pass_ticket}&fontgear=2'
+    html = requests.get(url, headers=headers).text
+    m = re.search(r'nickname = "(.+?)"', html)
+    if not m:
+        print('名称获取失败')
+        return
+    name = m.group(1)
+    print(name)
+    
+    ofile = open(f'wx_{name}.txt', 'a')
     wait = 10
     i = (start - 1) * 10
     while True:
