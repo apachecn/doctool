@@ -22,8 +22,7 @@ def parse_kv(text):
 
 def main():
     param = parse_kv(sys.argv[1])
-    start = sys.argv[2] if len(sys.argv) > 2 else None
-    end = sys.argv[3] if len(sys.argv) > 3 else None
+    start = int(sys.argv[2]) if len(sys.argv) > 2 else 1
     biz = param.get('__biz', '')
     uin = param.get('uin', '')
     key = param.get('key', '')
@@ -39,11 +38,10 @@ def main():
     name = m.group(1)
     print(name)
     
-    urls = []
+    ofile = open(f'wx_{name}.txt', 'a')
     wait = 10
-    i = 0
-    stop = False
-    while not stop:
+    i = (start - 1) * 10
+    while True:
         print(f'page: {i // 10 + 1}')
         url = f'https://mp.weixin.qq.com/mp/profile_ext?action=getmsg&__biz={biz}&f=json&offset={i}&count=10&is_ok=1&scene=&uin={uin}&key={key}&pass_ticket={pass_ticket}&wxtoken=&appmsg_token={appmsg_token}&x5=0&f=json'
         j = requests.get(url, headers=headers).json()
@@ -56,33 +54,16 @@ def main():
             break
         li = json.loads(j['general_msg_list'])
         for it in li['list']:
-            dt = datetime \
-                .utcfromtimestamp(it['comm_msg_info']['datetime']) \
-                .strftime('%Y%m%d')
-            if start and dt < start:
-                stop = True
-                break
-            if end and dt > end:
+            if 'app_msg_ext_info' not in it:
                 continue
             url = it['app_msg_ext_info']['content_url']
             if not url: continue
             print(url)
-            urls.append(url)
+            ofile.write(url + '\n')
         wait = 10
         i += 10
     
-    config = {
-        "name": f"{name} {start}-{end}",
-        "url": "https://mp.weixin.qq.com",
-        "title": "#activity-name",
-        "content": "#js_content",
-        "optiMode": "thres",
-        "list": urls,
-    }
-    config_fname = f'config_{uuid.uuid4().hex}.json'
-    open(config_fname, 'w', encoding='utf-8').write(json.dumps(config))
-    subp.Popen(f'crawl-epub {config_fname}', shell=True).communicate()
-    os.remove(config_fname)
+    ofile.close()
     print('done...')
     
 if __name__ == '__main__': main()
