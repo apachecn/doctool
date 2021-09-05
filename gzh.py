@@ -114,13 +114,13 @@ def tr_get_title(url, d):
 
 def uniq(fname):
     line = open(fname, encoding='utf-8').read().split('\n')
-    line = filter(None, map(lambda l: l.strip(), line))
+    line = list(filter(None, map(lambda l: l.strip(), line)))
     
     url_title_map = {}
     pool = ThreadPoolExecutor(5)
     hdls = []
     for url in line:
-        print(url)
+        print(f'get {url}')
         hdl = pool.submit(tr_get_title, url, url_title_map)
         hdls.append(hdl)
     for h in hdls: h.result()    
@@ -133,6 +133,7 @@ def uniq(fname):
         if not title or title in vis:
             continue
         ofile.write(url + '\n')
+        print(f'write {url}')
         vis.add(title)
     ofile.close()    
     print('done...')
