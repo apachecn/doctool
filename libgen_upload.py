@@ -6,6 +6,7 @@ from os import path
 from pyquery import PyQuery as pq
 import re
 from concurrent.futures import ThreadPoolExecutor
+from EpubCrawler.util import request_retry
 
 RE_INFO = r'\[(.+?)\]([^\[]+)'
 
@@ -22,17 +23,6 @@ default_hdrs = {
 }
 
 series = None
-
-def request_retry(method, url, retry=10000, **kw):
-    kw.setdefault('timeout', 100)
-    for i in range(retry):
-        try:
-            return requests.request(method, url, **kw)
-        except KeyboardInterrupt as e:
-            raise e
-        except Exception as e:
-            print(f'{url} retry {i}')
-            if i == retry - 1: raise e
 
 def calc_md5(bts):
     hash = hashlib.md5()
@@ -127,7 +117,7 @@ def process_file(fname):
     print(f'md5: {md5}')
     
     url = urls['info'].replace('{md5}', md5)
-    r = request_retry('GET', url, headers=default_hdrs)
+    r = request_retry('GET', url, headers=default_hdrs, allow_redirects=False)
     if r.status_code != 404:
         print('已存在')
         return
@@ -163,7 +153,7 @@ def process_file_safe(fname):
         print(ex)
     
 def process_dir(dir):
-    pool = ThreadPoolExecutor(max_workers=3)
+    pool = ThreadPoolExecutor(1)
     hdlrs = []
     files = os.listdir(dir)
     for f in files:
