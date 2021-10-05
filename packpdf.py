@@ -17,6 +17,9 @@ import shutil
 import fitz
 import img2pdf
 from imgyaso import adathres
+import subprocess as subp
+import platform
+import uuid
 
 def dump_pdf(fname, dir):
 
@@ -60,7 +63,13 @@ def gen_pdf(fname, dir):
     with open(fname, 'wb') as f:
         f.write(pdf)
 
-def process_img(img, size=1900):
+def process_img(img, size=1900, deskew=True):
+    # firstly deskew
+    if deskew:
+        img = magick_deskew(img)
+    
+    img = np.frombuffer(img, np.uint8)
+    img = cv2.imdecode(img, cv2.IMREAD_GRAYSCALE)
     # check grayscale
     assert img.ndim == 2
     
@@ -75,7 +84,10 @@ def process_img(img, size=1900):
     # bw
     img = adathres(img, 9)
     
-    return img
+    img = cv2.imencode('.png', img, [
+        cv2.IMWRITE_PNG_BILEVEL, 1,
+    ])[1]
+    return bytes(img)
     
 is_pic = lambda s: s.endswith('.jpg') or \
                    s.endswith('.png') or \
@@ -95,16 +107,20 @@ def process_dir(args):
     for f in files:
         print(f)
         f = path.join(dir, f)
-        img = cv2.imdecode(np.fromfile(f, np.uint8), cv2.IMREAD_GRAYSCALE)
-        img = process_img(img, size=args.size)
-        os.unlink(f)
-        nf = re.sub(r'\.\w+$', '', f) + '.png'
-        cv2.imwrite(nf, img, [
-            # cv2.IMWRITE_PNG_COMPRESSION, 9,
-            cv2.IMWRITE_PNG_BILEVEL, 1,
-        ])
+        img = open(f, 'rb').read()
+        img = process_img(img, size=args.size, deskew=args.deskew)
+        open(f, 'wb').write(img)
 
     gen_pdf(p, dir)
+    
+def magick_deskew(img):
+    fname = path.join(tempfile.gettempdir(), uuid.uuid4().hex + '.png')
+    open(fname, 'wb').write(img)
+    cmd = f'convert "{fname}" -deskew 40% "{fname}"'
+    if platform.system().lower() == 'windows':
+        cmd = 'magick ' + cmd
+    subp.Popen(cmd, shell=True)
+    return open(fname, 'rb').read()
     
 def process_pdf(args):
     
@@ -126,6 +142,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("fname", help="pdf or dir name")
     parser.add_argument("-s", "--size", type=int, default=1900, help="width of pics")
+    parser.add_argument("-d", "--deskew", action='store_true', help="deskew or not")
     args = parser.parse_args()
     
     if path.isdir(args.fname):
