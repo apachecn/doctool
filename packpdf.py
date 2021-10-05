@@ -119,7 +119,7 @@ def magick_deskew(img):
     cmd = f'convert "{fname}" -deskew 40% "{fname}"'
     if platform.system().lower() == 'windows':
         cmd = 'magick ' + cmd
-    subp.Popen(cmd, shell=True)
+    subp.Popen(cmd, shell=True).communicate()
     return open(fname, 'rb').read()
     
 def process_pdf(args):
