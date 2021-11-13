@@ -24,16 +24,19 @@ function getBody(html) {
 function getToc(id, headers) {
     var res = []
 	for (var i = 1; ; i++) {
-		var url = 'https://www.kaggle.com/requests/ListKernelsRequest'
-		var param = {"kernelFilterCriteria":{"competitionId":id,"userId":null,"sortBy":"hotness","pageSize":100,"group":"everyone","outputType":null,"startRow":0,"page":i,"datasetId":null,"datasourceType":null,"forkParentScriptId":null,"kernelType":null,"language":null,"tagIds":"","excludeResultsFilesOutputs":false,"wantOutputFiles":true,"search":"","after":null,"hasGpuRun":null,"privacy":null},"detailFilterCriteria":{"deletedAccessBehavior":"returnNothing","unauthorizedAccessBehavior":"returnNothing","excludeResultsFilesOutputs":false,"wantOutputFiles":true,"kernelIds":[],"maxOutputFilesPerKernel":null,"outputFileTypes":[],"selection":{}}}
+		var url = 'https://www.kaggle.com/requests/KernelsService/ListKernels'
+		var param = {"kernelFilterCriteria":{"search":"","listRequest":{"competitionId":id,"userId":null,"sortBy":"hotness","pageSize":100,"group":"everyone","outputType":null,"page":i,"datasetId":null,"datasourceType":null,"forkParentScriptId":null,"kernelType":null,"language":null,"tagIds":"","excludeResultsFilesOutputs":false,"wantOutputFiles":false,"after":null,"hasGpuRun":null,"privacy":null}},"detailFilterCriteria":{"deletedAccessBehavior":"returnNothing","unauthorizedAccessBehavior":"returnNothing","excludeResultsFilesOutputs":false,"wantOutputFiles":false,"gcsTimeoutMs":null,"kernelIds":[],"maxOutputFilesPerKernel":null,"outputFileTypes":[],"readMask":null}}
 		var jstr = request('POST', url, {json: param, headers: headers})
 			.body.toString()
 		var j = JSON.parse(jstr)
 		if (j['result']['kernels'].length == 0)
 			break
-		for (var it of j['result']['kernels'])
+		for (var it of j['result']['kernels']) {
+			it.url = 'https://www.kaggle.com' + it.scriptUrl
 			res.push(it)
+		}
 	}
+	console.log(`Total: ${res.length}`)
     return res
 }
 
@@ -42,8 +45,7 @@ function compToId(html) {
     return id
 }
 
-function download(name) {
-    console.log(`name: ${name}`)
+function getCookiesAndId(name) {
 	var url = `https://www.kaggle.com/c/${name}/code`
 	var r = request('GET', url)
 	var cookies = {}
@@ -52,12 +54,17 @@ function download(name) {
 		if(kv.length < 2) continue
 		cookies[kv[0]] = kv[1]
 	}
+	var id = compToId(r.body.toString())
+	return [cookies, id]
+}
+
+function download(name) {
+    console.log(`name: ${name}`)
+	var [cookies, id] = getCookiesAndId(name)
+	console.log('Cookies:', cookies)
+	console.log(`id: ${id}`)
 	var cookieStr = Object.entries(cookies)
 		.map(x => x[0] + '=' + x[1]).join('; ')
-	// console.log(cookieStr)
-	
-	var id = compToId(r.body.toString())
-	console.log(`id: ${id}`)
 	var headers = {
 		'Cookie': cookieStr,
 		'x-xsrf-token': cookies['XSRF-TOKEN'],
@@ -66,26 +73,19 @@ function download(name) {
     var articles = [{title: `Kaggle Kernel - ${name}`, content: ''}]
     var imgs = new Map()
     for(var it of toc) {
-        var notebooks = it.outputFiles.filter(
-			x => x.name == '__results__.html' ||
-			     x.name == '__resultx__.html'
-		)
-		if (notebooks.length == 0)
-			continue
-		var realUrl = notebooks[0].downloadUrl
-		console.log(`url: ${realUrl}`)
-        var co = request('GET', realUrl).body.toString()
-		co = processImg(getBody(co), imgs, {
+		console.log(it.url)
+        var html = request('GET', it.url).body.toString()
+		var realUrl = /"renderedOutputUrl":"(.+?)"/.exec(html)[1]
+		html = request('GET', realUrl).body.toString()
+		var co = cheerio.load(html)('#notebook-container').toString()
+		co = processImg(co, imgs, {
 			pageUrl: realUrl,
 			imgPrefix: '../Images/',
 		})
-        var from = `<p>From: <a href='${url}'>${url}</a></p>`
-        var score = ''
-        if(it.bestPublicScore)
-            score = `<p>Score: ${it.bestPublicScore}</p>`
+        var from = `<p>From: <a href='${it.url}'>${it.url}</a></p>`
 		var prefix = 'https://www.kaggle.com'
         var au = `<p>Author: <a href='${prefix + it.author.profileUrl}'>${it.author.displayName}</a></p>`
-        co = `${from}\n${au}\n${score}\n${co}`
+        co = `${from}\n${au}\n${co}`
         articles.push({title: it.title, content: co})
     }
     genEpub(articles, imgs)
