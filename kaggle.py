@@ -38,12 +38,17 @@ def get_cookie_and_id(name):
     id = comp_to_id(r.text)
     return [cookies, id]
     
+def get_real_url(url):
+    html = request_retry('GET', url).text
+    return re.search(r'"renderedOutputUrl":"(.+?)"', html).group(1)
+    
 def download_one(it, art, imgs):
     try:
-        html = request_retry('GET', it['url']).text
-        real_url = re.search(r'"renderedOutputUrl":"(.+?)"', html).group(1)
+        real_url = get_real_url(it['url'])
         html = request_retry('GET', real_url).text
-        co = pq(html).find('#notebook-container').html()
+        root = pq(html)
+        root.find('script').remove()
+        co = root.find('#notebook-container').html()
         co = process_img(co, imgs, 
             page_url=real_url, img_prefix='../Images/')
         origin = f"<p>From: <a href='{it['url']}'>{it['url']}</a></p>"
