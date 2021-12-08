@@ -2,6 +2,7 @@ var request = require('sync-request')
 var cheerio = require('cheerio')
 var processImg = require('epub-crawler/src/img')
 var fs = require('fs')
+var req = require('epub-crawler/src/util').requestRetry
 
 var selectors = {
     'title': 'h1.entry-title',
@@ -9,25 +10,10 @@ var selectors = {
     'remove': 'script, ins, iframe, #personalNoteDiv, .recommendedPostsDiv, .author_info_box, .entry-meta, #practiceLinkDiv, div[id^=AP], #improvedBy, .code-output-container',
     'tab': '.code-block',
     'code': 'td.code',
-    'link': 'h2.entry-title>a',
+    'link': '.articles-list .content .head a',
 }
 
 var artTemp = '<html><body>\n<h1>{title}</h1>\n{content}\n</body></html>'
-
-function requestRetry(method, url, options={}) {
-    
-    var retry = options.retry || 5
-    
-    for(var i = 0; i < retry; i++) {
-        try {
-            return request(method, url, options)
-        } catch(ex) { 
-            if(i == retry - 1) throw ex;
-        }
-    }
-}
-
-var req = requestRetry
 
 function getArticle(html, url) {
     var $ = cheerio.load(html)
