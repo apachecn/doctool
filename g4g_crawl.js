@@ -75,6 +75,7 @@ function getIds(html) {
     var res = []
     for (var i = 0; i < $links.length; i++) {
         var url = $links.eq(i).attr('href')
+        if (!url) continue
         res.push(url.split('/').slice(-2)[0])
     }
     return res
