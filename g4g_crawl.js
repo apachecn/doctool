@@ -99,6 +99,7 @@ function fetch(fname, cate, st, ed) {
         var html = req('GET', url).body.toString()
         var ids = getIds(html)
         if (ids.length == 0) break
+        fs.writeSync(ofile, `page: ${i}\n`)
         ids = ids.filter(x => !existed.has(x))
         for (var id of ids)
             fs.writeSync(ofile, id + '\n')
