@@ -5,15 +5,28 @@ var fs = require('fs')
 var req = require('epub-crawler/src/util').requestRetry
 
 var selectors = {
-    'title': 'h1.entry-title',
-    'content': '.entry-content',
-    'remove': 'script, ins, iframe, #personalNoteDiv, .recommendedPostsDiv, .author_info_box, .entry-meta, #practiceLinkDiv, div[id^=AP], #improvedBy, .code-output-container',
+    'title': 'article>h1',
+    'content': 'article>.text',
+    'remove': 'script, ins, iframe, p:empty, pre:empty, #personalNoteDiv, div[id^=AP], .code-output-container, .textBasedMannualAds, ._ap_apex_ad, div>br',
     'tab': '.code-block',
     'code': 'td.code',
+    'line': '.line',
     'link': '.articles-list .content .head a',
 }
 
 var artTemp = '<html><body>\n<h1>{title}</h1>\n{content}\n</body></html>'
+
+function processTab($, $tab) {
+	var $code = $tab.find(selectors.code).eq(0)
+	var $newCode = $('<pre></pre>')
+	var $lines = $code.find(selectors.line)
+	var lines = []
+	for (var i = 0; i < $lines.length; i++) {
+		lines.push($lines.eq(i).text())
+	}
+	$newCode.text(lines.join('\n'))
+	$tab.replaceWith($newCode)
+}
 
 function getArticle(html, url) {
     var $ = cheerio.load(html)
@@ -23,10 +36,7 @@ function getArticle(html, url) {
     var $tabs = $(selectors.tab)
     for(var i = 0; i < $tabs.length; i++) {
         var $tab = $tabs.eq(i)
-        var $code = $tab.find(selectors.code).eq(0)
-        var $newCode = $('<pre></pre>')
-        $newCode.text($code.text())
-        $tab.replaceWith($newCode)
+        processTab($, $tab)
     }
     
     var title = '<h1>' + 
