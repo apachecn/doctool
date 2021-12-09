@@ -7,7 +7,7 @@ var req = require('epub-crawler/src/util').requestRetry
 var selectors = {
     'title': 'article>h1',
     'content': 'article>.text',
-    'remove': 'script, ins, iframe, p:empty, pre:empty, #personalNoteDiv, div[id^=AP], .code-output-container, .textBasedMannualAds, ._ap_apex_ad, div>br',
+    'remove': 'script, ins, iframe, p:empty, pre:empty, #personalNoteDiv, #practiceLinkDiv, div[id^=AP], .code-output-container, .textBasedMannualAds, ._ap_apex_ad, div>br',
     'tab': '.code-block',
     'code': 'td.code',
     'line': '.line',
