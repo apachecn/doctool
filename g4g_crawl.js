@@ -47,10 +47,21 @@ function getArticle(html, url) {
     return {title: title, content: co}
 }
 
+function load_exist() {
+	var fname = 'g4g_exist.json'
+	if (!fs.existsSync(fname))
+		return new Set()
+	var li = JSON.parse(fs.readFileSync(fname, 'utf-8'))
+	console.log(`load ${li.length} existed`)
+	return new Set(li)
+}
+
 function download(id) {
     console.log(id)
     if (fs.existsSync(`out/${id}.html`))
         return
+	var exi = load_exist()
+	if (exi.has(id)) return
     var url = `https://www.geeksforgeeks.org/${id}/`
     var html = req('GET', url).body.toString()
     var art = getArticle(html, url)
@@ -94,14 +105,7 @@ function getIds(html) {
 function fetch(fname, cate, st, ed) {
     st = st || 1
     ed = ed || 1000000
-    var dir = 'd:/docs/geeksforgeeks-zh/docs/'
-    if (fs.existsSync(dir)) {
-        var existed = fs.readdirSync('d:/docs/geeksforgeeks-zh/docs/')
-            .filter(x => x.endsWith('.md'))
-            .map(x => x.slice(0, -3))
-        existed = new Set(existed)
-    } else
-        var existed = new Set()
+    var exi = load_exist()
     
     var ofile = fs.openSync(fname, 'a')
     for (var i = st; i <= ed; i++) {
@@ -111,7 +115,7 @@ function fetch(fname, cate, st, ed) {
         var ids = getIds(html)
         if (ids.length == 0) break
         fs.writeSync(ofile, `page: ${i}\n`)
-        ids = ids.filter(x => !existed.has(x))
+        ids = ids.filter(x => !exi.has(x))
         for (var id of ids)
             fs.writeSync(ofile, id + '\n')
     }
