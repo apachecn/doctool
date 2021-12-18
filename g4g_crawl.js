@@ -70,13 +70,13 @@ function download(id, dir='out') {
         'pageUrl': url,
         'imgPrefix': 'img/',
     })
-    try {fs.mkdirSync('out')} catch {}
-    try {fs.mkdirSync('out/img')} catch {}
+    try {fs.mkdirSync(dir)} catch {}
+    try {fs.mkdirSync(`${dir}/img`)} catch {}
     html = artTemp.replace('{title}', art.title)
                .replace('{content}', art.content)
-    fs.writeFileSync(`out/${id}.html`, html)
+    fs.writeFileSync(`${dir}/${id}.html`, html)
     for (var [name, img] of imgs.entries()) {
-        fs.writeFileSync(`out/img/${name}`, img)
+        fs.writeFileSync(`${dir}/img/${name}`, img)
     }
 
 }
