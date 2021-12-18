@@ -56,9 +56,9 @@ function load_exist() {
 	return new Set(li)
 }
 
-function download(id) {
+function download(id, dir='out') {
     console.log(id)
-    if (fs.existsSync(`out/${id}.html`))
+    if (fs.existsSync(`${dir}/${id}.html`))
         return
 	var exi = load_exist()
 	if (exi.has(id)) return
@@ -82,12 +82,13 @@ function download(id) {
 }
 
 function batch(fname) {
+	var dir = fname.replace(/\.\w+$/, '')
     var ids = fs.readFileSync(fname, 'utf-8')
                 .split('\n')
                 .map(x => x.trim())
                 .filter(x => x)
     for (var id of ids) 
-        download(id)
+        download(id, dir)
 }
 
 function getIds(html) {
