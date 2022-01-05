@@ -7,6 +7,9 @@ config = {
     'url': 'https://www.geeksforgeeks.org/category/html/page/{i}/',
     'link': '.articles-list .content .head a',
     'proxy': None,
+    'headers': {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
+    },
 }
 
 def get_toc(html, base):
@@ -34,6 +37,7 @@ def main():
         html = request_retry(
             'GET', url, 
             proxies=config['proxy'],
+            headers=config['headers'],
         ).text
         toc = get_toc(html, url)
         if len(toc) == 0: break
