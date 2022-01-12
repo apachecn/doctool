@@ -12,20 +12,23 @@ var selectors = {
     'code': 'td.code',
     'line': '.line',
     'link': '.articles-list .content .head a',
+    'pageUrl': 'https://www.geeksforgeeks.org/{id}/',
+    'tocUrl': 'https://www.geeksforgeeks.org/category/{cate}/page/{i}/',
+    'exiName': 'g4g_exist.json',
 }
 
 var artTemp = '<html><body>\n<h1>{title}</h1>\n{content}\n</body></html>'
 
 function processTab($, $tab) {
-	var $code = $tab.find(selectors.code).eq(0)
-	var $newCode = $('<pre></pre>')
-	var $lines = $code.find(selectors.line)
-	var lines = []
-	for (var i = 0; i < $lines.length; i++) {
-		lines.push($lines.eq(i).text())
-	}
-	$newCode.text(lines.join('\n'))
-	$tab.replaceWith($newCode)
+    var $code = $tab.find(selectors.code).eq(0)
+    var $newCode = $('<pre></pre>')
+    var $lines = $code.find(selectors.line)
+    var lines = []
+    for (var i = 0; i < $lines.length; i++) {
+        lines.push($lines.eq(i).text())
+    }
+    $newCode.text(lines.join('\n'))
+    $tab.replaceWith($newCode)
 }
 
 function getArticle(html, url) {
@@ -48,21 +51,22 @@ function getArticle(html, url) {
 }
 
 function load_exist() {
-	var fname = 'g4g_exist.json'
-	if (!fs.existsSync(fname))
-		return new Set()
-	var li = JSON.parse(fs.readFileSync(fname, 'utf-8'))
-	console.log(`load ${li.length} existed`)
-	return new Set(li)
+    var fname = selectors.exiName
+    if (!fs.existsSync(fname))
+        return new Set()
+    var li = JSON.parse(fs.readFileSync(fname, 'utf-8'))
+    console.log(`load ${li.length} existed`)
+    return new Set(li)
 }
+
+var exi = load_exist()
 
 function download(id, dir='out') {
     console.log(id)
     if (fs.existsSync(`${dir}/${id}.html`))
         return
-	var exi = load_exist()
-	if (exi.has(id)) return
-    var url = `https://www.geeksforgeeks.org/${id}/`
+    if (exi.has(id)) return
+    var url = selectors.pageUrl.replace('{id}', id)
     var html = req('GET', url).body.toString()
     var art = getArticle(html, url)
     var imgs = new Map()
@@ -82,7 +86,7 @@ function download(id, dir='out') {
 }
 
 function batch(fname) {
-	var dir = fname.replace(/\.\w+$/, '')
+    var dir = fname.replace(/\.\w+$/, '')
     var ids = fs.readFileSync(fname, 'utf-8')
                 .split('\n')
                 .map(x => x.trim())
@@ -106,12 +110,13 @@ function getIds(html) {
 function fetch(fname, cate, st, ed) {
     st = st || 1
     ed = ed || 1000000
-    var exi = load_exist()
     
     var ofile = fs.openSync(fname, 'a')
     for (var i = st; i <= ed; i++) {
         console.log(`page: ${i}`)
-        var url = `https://www.geeksforgeeks.org/category/${cate}/page/${i}/`
+        var url = selectors.tocUrl
+            .replace('{cate}', cate)
+            .replace('{i}', i.toString())
         var html = req('GET', url).body.toString()
         var ids = getIds(html)
         if (ids.length == 0) break
