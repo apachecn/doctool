@@ -7,7 +7,7 @@ var req = require('epub-crawler/src/util').requestRetry
 var selectors = {
     'title': 'h1.title',
     'content': 'section.entry',
-    'remove': '.simplesocialbuttons, .widget_text, ins, script, .woo-sc-hr, center',
+    'remove': '.simplesocialbuttons, .widget_text, ins, script, .woo-sc-hr, center, .crp_related',
     'link': 'h2.title>a',
     'exiName': 'mlm_exist.json',
     'pageUrl': 'https://machinelearningmastery.com/{id}/',
