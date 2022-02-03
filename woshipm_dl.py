@@ -98,7 +98,7 @@ def download(cate, stdt, eddt):
             print(art)
             config['list'].append(art['link'])
     
-    fname = f'config_woshipm_{stdt}_{eddt}.json'
+    fname = f'config_woshipm_{cate}_{stdt}_{eddt}.json'
     open(fname, 'w').write(json.dumps(config))
     subp.Popen(f'crawl-epub {fname}', shell=True).communicate()
 
