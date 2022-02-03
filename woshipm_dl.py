@@ -3,6 +3,7 @@ import requests
 from pyquery import PyQuery as pq
 import json
 import subprocess as subp
+from os import path
 
 crawler_config = {
     "name": "",
@@ -67,18 +68,18 @@ def get_first_pg(cate, dt, total):
     
     return -1
     
-def main():
-    cate = sys.argv[1]
-    stdt = sys.argv[2]
-    eddt = sys.argv[3]
+def download(cate, stdt, eddt):
     config = crawler_config.copy()
     
     url = f'http://www.woshipm.com/category/{cate}'
     html = requests.get(url).text
     info = get_info(html)    
+    print(info)
     cateName = info['cate']
     config['name'] = f'人人都是产品经理社区：{cateName}分类 {stdt}-{eddt}'
-    print(info)
+    if path.exists(config['name'] + '.epub'):
+        print('已存在')
+        return
     
     st = get_first_pg(cate, eddt, info['total'])
     stop = False
@@ -99,6 +100,33 @@ def main():
     
     fname = f'config_woshipm_{stdt}_{eddt}.json'
     open(fname, 'w').write(json.dumps(config))
-    subp.Popen(f'crawl-epub {fname}', shell=True)
+    subp.Popen(f'crawl-epub {fname}', shell=True).communicate()
+
+def download_year(cate, year):
+    is_leap = lambda year: \
+        year % 4 == 0 and year % 100 != 0 or year % 400 == 0
+    yr_map = {
+        1: 31,
+        2: 28 if not is_leap(int(year)) else 29,
+        3: 31,
+        4: 30,
+        5: 31,
+        6: 30,
+        7: 31,
+        8: 31,
+        9: 30,
+        10: 31,
+        11: 30,
+        12: 31,
+    }
+    for mon, nd in yr_map.items():
+        download(cate,  f'{year}{mon:02d}01', f'{year}{mon:02d}{nd:02d}')
+    
+def main():
+    cmd = sys.argv[1]
+    if cmd == 'dl':
+        download(sys.argv[2], sys.argv[3], sys.argv[4])
+    elif cmd == 'dlyr':
+        download_year(sys.argv[2], sys.argv[3])
     
 if __name__ == '__main__': main()
