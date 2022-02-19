@@ -42,7 +42,7 @@ def process_file(fname):
         el_new_pre.html(code)
         el_pre.replace_with(el_new_pre)
     
-    el_codes = root('.EmphasisFontCategoryNonProportional, .FontName2')
+    el_codes = root('.EmphasisFontCategoryNonProportional, .FontName2, .FontName1')
     for i in range(len(el_codes)):
         el_code = el_codes.eq(i)
         el_new_code = root('<code></code>')
