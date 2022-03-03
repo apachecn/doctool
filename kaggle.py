@@ -85,6 +85,8 @@ def download(name):
 
 def main():
     names = sys.argv[1].split(':')
-    for n in names: download(n)
+    for n in names: 
+        try: download(n)
+        except: pass
     
 if __name__ == '__main__': main()
