@@ -8,21 +8,14 @@ from concurrent.futures import ThreadPoolExecutor
 
 pool = ThreadPoolExecutor(5)
 
-def get_toc(id, headers):
-    res = []
-    i = 1
-    while True:
-        url = 'https://www.kaggle.com/requests/KernelsService/ListKernels'
-        param = {"kernelFilterCriteria":{"search":"","listRequest":{"competitionId":id,"userId":None,"sortBy":"hotness","pageSize":100,"group":"everyone","outputType":None,"page":i,"datasetId":None,"datasourceType":None,"forkParentScriptId":None,"kernelType":None,"language":None,"tagIds":"","excludeResultsFilesOutputs":False,"wantOutputFiles":False,"after":None,"hasGpuRun":None,"privacy":None}},"detailFilterCriteria":{"deletedAccessBehavior":"returnNothing","unauthorizedAccessBehavior":"returnNothing","excludeResultsFilesOutputs":False,"wantOutputFiles":False,"gcsTimeoutMs":None,"kernelIds":[],"maxOutputFilesPerKernel":None,"outputFileTypes":[],"readMask":None}}
-        j = request_retry('POST', url, json=param, headers=headers).json()
-        if len(j['result']['kernels']) == 0:
-            break
-        for it in j['result']['kernels']:
-            it['url'] = 'https://www.kaggle.com' + it['scriptUrl']
-        res.append(j['result']['kernels'])
-        i += 1
-    print(f'Total: {sum(map(len, res))}')
-    return res
+def get_toc(id, pg, headers):
+    url = 'https://www.kaggle.com/api/i/kernels.KernelsService/ListKernels'
+    param = {"kernelFilterCriteria":{"search":"","listRequest":{"competitionId":id,"sortBy":"HOTNESS","pageSize":20,"group":"EVERYONE","page":pg,"tagIds":"","excludeResultsFilesOutputs":False,"wantOutputFiles":False}},"detailFilterCriteria":{"deletedAccessBehavior":"RETURN_NOTHING","unauthorizedAccessBehavior":"RETURN_NOTHING","excludeResultsFilesOutputs":False,"wantOutputFiles":False,"kernelIds":[],"outputFileTypes":[]}}
+    r = request_retry('POST', url, json=param, headers=headers)
+    j = r.json()
+    for it in j['kernels']:
+        it['url'] = 'https://www.kaggle.com' + it['scriptUrl']
+    return j['kernels']
     
 def comp_to_id(html):
     return re.search(r'kaggle/(\d+)', html).group(1)
@@ -70,12 +63,15 @@ def download(name):
         'Cookie': cookie_str,
         'x-xsrf-token': cookies.get('XSRF-TOKEN', ''),
     }
-    toc = get_toc(id, headers)
-    for i, pg in enumerate(toc):
-        articles = [{'title': f'Kaggle Kernel - {name} - Page{i + 1}', 'content': ''}]
+    i = 1
+    while True:
+        print(f'Page: {i}')
+        toc = get_toc(id, i, headers)
+        if len(toc) == 0: break
+        articles = [{'title': f'Kaggle Kernel - {name} - Page{i}', 'content': ''}]
         imgs = {}
         hdls = []
-        for it in pg:
+        for it in toc:
             print(it['url'])
             art = {}
             articles.append(art)
@@ -84,6 +80,7 @@ def download(name):
         for h in hdls: h.result()
         articles = list(filter(None, articles))
         gen_epub(articles, imgs)
+        i += 1
 
 def main():
     names = sys.argv[1].split(':')
