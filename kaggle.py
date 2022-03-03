@@ -13,6 +13,7 @@ def get_toc(id, pg, headers):
     param = {"kernelFilterCriteria":{"search":"","listRequest":{"competitionId":id,"sortBy":"HOTNESS","pageSize":20,"group":"EVERYONE","page":pg,"tagIds":"","excludeResultsFilesOutputs":False,"wantOutputFiles":False}},"detailFilterCriteria":{"deletedAccessBehavior":"RETURN_NOTHING","unauthorizedAccessBehavior":"RETURN_NOTHING","excludeResultsFilesOutputs":False,"wantOutputFiles":False,"kernelIds":[],"outputFileTypes":[]}}
     r = request_retry('POST', url, json=param, headers=headers)
     j = r.json()
+    if 'kernels' not in j: return []
     for it in j['kernels']:
         it['url'] = 'https://www.kaggle.com' + it['scriptUrl']
     return j['kernels']
