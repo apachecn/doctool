@@ -19,9 +19,9 @@ def get_toc(id, headers):
             break
         for it in j['result']['kernels']:
             it['url'] = 'https://www.kaggle.com' + it['scriptUrl']
-            res.append(it)
+        res.append(j['result']['kernels'])
         i += 1
-    print(f'Total: {len(res)}')
+    print(f'Total: {sum(map(len, res))}')
     return res
     
 def comp_to_id(html):
@@ -71,18 +71,19 @@ def download(name):
         'x-xsrf-token': cookies.get('XSRF-TOKEN', ''),
     }
     toc = get_toc(id, headers)
-    articles = [{'title': f'Kaggle Kernel - {name}', 'content': ''}]
-    imgs = {}
-    hdls = []
-    for it in toc:
-        print(it['url'])
-        art = {}
-        articles.append(art)
-        hdl = pool.submit(download_one, it, art, imgs)
-        hdls.append(hdl)
-    for h in hdls: h.result()
-    articles = list(filter(None, articles))
-    gen_epub(articles, imgs)
+    for i, pg in enumerate(toc):
+        articles = [{'title': f'Kaggle Kernel - {name} - Page{i + 1}', 'content': ''}]
+        imgs = {}
+        hdls = []
+        for it in pg:
+            print(it['url'])
+            art = {}
+            articles.append(art)
+            hdl = pool.submit(download_one, it, art, imgs)
+            hdls.append(hdl)
+        for h in hdls: h.result()
+        articles = list(filter(None, articles))
+        gen_epub(articles, imgs)
 
 def main():
     names = sys.argv[1].split(':')
