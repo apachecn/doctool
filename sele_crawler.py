@@ -9,6 +9,7 @@ import json
 import re
 import hashlib
 import base64
+import time
 
 RE_DATA_URL = r'^data:image/\w+;base64,'
 
@@ -71,6 +72,7 @@ def process_img(driver, html, imgs, **kw):
                 JS_GET_IMG_B64 + '\nreturn getImageBase64("body>img")')
             print(b64[:100])
             process_img_data_url(b64, el_img, imgs, **kw)
+            time.sleep(config['wait'])
         
     return root.html()
 
@@ -116,6 +118,7 @@ def main():
         co = "<blockquote>来源：<a href='" + url + "'>" + url + "</a></blockquote>\n" + co
         co = process_img(driver, co, imgs, page_url=url, img_prefix='../Images/')
         articles.append({'title': title, 'content': co})
+        time.sleep(config['wait'])
     
     gen_epub(articles, imgs)
     driver.close()
