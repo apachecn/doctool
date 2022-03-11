@@ -67,12 +67,14 @@ def process_img(driver, html, imgs, **kw):
         picname = hashlib.md5(url.encode('utf-8')).hexdigest() + '.png'
         print(f'pic: {url} => {picname}')
         if picname not in imgs:
-            driver.get(url)
-            b64 = driver.execute_script(
-                JS_GET_IMG_B64 + '\nreturn getImageBase64("body>img")')
-            print(b64[:100])
-            process_img_data_url(b64, el_img, imgs, **kw)
-            time.sleep(config['wait'])
+            try:
+                driver.get(url)
+                b64 = driver.execute_script(
+                    JS_GET_IMG_B64 + '\nreturn getImageBase64("body>img")')
+                print(b64[:100])
+                process_img_data_url(b64, el_img, imgs, **kw)
+                time.sleep(config['wait'])
+            except Exception as ex: print(ex)
         
     return root.html()
 
@@ -103,22 +105,24 @@ def main():
     imgs = {}
     
     for url in config['list']:
-        print(url)
-        driver.get(url)
-        html = driver.find_element_by_css_selector('body').get_attribute('outerHTML')
-        root = pq(html)
-        title = root(config['title']).eq(0).text().replace('\n', '')
-        title = f'<h1>{title}</h1>'
-        print(title)
-        el_co = root(config['content'])
-        co = '\n'.join([
-            el_co.eq(i).html()
-            for i in range(len(el_co))
-        ])
-        co = "<blockquote>来源：<a href='" + url + "'>" + url + "</a></blockquote>\n" + co
-        co = process_img(driver, co, imgs, page_url=url, img_prefix='../Images/')
-        articles.append({'title': title, 'content': co})
-        time.sleep(config['wait'])
+        try:
+            print(url)
+            driver.get(url)
+            html = driver.find_element_by_css_selector('body').get_attribute('outerHTML')
+            root = pq(html)
+            title = root(config['title']).eq(0).text().replace('\n', '')
+            title = f'<h1>{title}</h1>'
+            print(title)
+            el_co = root(config['content'])
+            co = '\n'.join([
+                el_co.eq(i).html()
+                for i in range(len(el_co))
+            ])
+            co = "<blockquote>来源：<a href='" + url + "'>" + url + "</a></blockquote>\n" + co
+            co = process_img(driver, co, imgs, page_url=url, img_prefix='../Images/')
+            articles.append({'title': title, 'content': co})
+            time.sleep(config['wait'])
+        except Exception as ex: print(ex)
     
     gen_epub(articles, imgs)
     driver.close()
