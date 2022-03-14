@@ -4,6 +4,7 @@ from selenium.webdriver.chrome.options import Options
 from EpubCrawler.util import opti_img
 from EpubCrawler.config import config
 from GenEpub import gen_epub
+from urllib.parse import urljoin
 import sys
 import json
 import re
