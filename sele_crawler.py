@@ -107,7 +107,7 @@ def main():
     for url in config['list']:
         try:
             print(url)
-            if not re.search(r'https?://', url):
+            if not re.search(r'^https?://', url):
                 articles.append({'title': url, 'content': ''})
                 continue
             driver.get(url)
