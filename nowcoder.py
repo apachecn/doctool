@@ -8,10 +8,19 @@ from EpubCrawler.util import request_retry
 from EpubCrawler.img import process_img
 
 headers = {
-     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-    'accept-encoding': 'gzip, deflate, br',
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
     'accept-language': 'zh-CN,zh;q=0.9',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36',
+    'Cache-Control': 'no-cache', 
+    'Pragma': 'no-cache', 
+    'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="99", "Google Chrome";v="99"', 
+    'sec-ch-ua-mobile': '?0', 
+    'sec-ch-ua-platform': '"Windows"', 
+    'Sec-Fetch-Dest': 'document', 
+    'Sec-Fetch-Mode': 'navigate', 
+    'Sec-Fetch-Site': 'none', 
+    'Sec-Fetch-User': '?1', 
+    'Upgrade-Insecure-Requests': '1', 
     'Cookie': os.environ.get('NC_COOKIE', ''),
 }
 
@@ -68,6 +77,15 @@ def get_content(html):
         {'<p>讨论</p>' + replies if replies else ''}
     '''
     
+def get_title(html):
+    return pq(html).find('.paper-title').text()
+    
+def get_qids(html):
+    els = pq(html).find('.subject-num-list li a')
+    return [
+        els.eq(i).attr('data-qid')
+        for i in range(len(els))
+    ]
 
 def download(pid):
     fname = f'out/{pid}.html'
@@ -83,13 +101,19 @@ def download(pid):
         'GET', url, headers=headers).text
     info = get_info(html)
     if not info['tid'] or not info['qid']:
-        print(f'{pid} 获取失败')
+        print(f'{pid} TID, QID 获取失败')
         return
-    print(info)
-    art_html = f'<h1>{info["title"]}</h1>'
-    for i in range(info['total']):
-        tid = info['tid']
-        qid = int(info['qid']) + i
+    tid, qid, title = info['tid'], info['qid'], info['title']
+    url = f'https://www.nowcoder.com/test/question/done?tid={tid}&qid={qid}'
+    html = request_retry(
+        'GET', url, headers=headers).text
+    qids = get_qids(html)
+    if len(qids) == 0:
+        print(f'{pid} QIDS 获取失败')
+        return
+    print(pid, title, tid, qids)
+    art_html = f'<h1>{title}</h1>'
+    for i, qid in enumerate(qids):
         print(qid)
         url = f'https://www.nowcoder.com/test/question/done?tid={tid}&qid={qid}'
         html = request_retry('GET', url, headers=headers).text
@@ -122,7 +146,9 @@ def fetch(st=None, ed=None):
     while not stop:
         url = url_tmpl.replace('{page}', str(i))
         print(url)
-        j = request_retry('GET', url, headers=headers).json()
+        hdrs = headers.copy()
+        hdrs['Cookie'] = 'acw_sc__v2=623b401866fbc3f05bf6ecb156035d9ea88a80af'
+        j = request_retry('GET', url, headers=hdrs).json()
         if j['code'] != 0: break
         for it in j['data']['paperVos']:
             dt = datetime.fromtimestamp(it['properties']['paper']['createTime'] / 1000)
