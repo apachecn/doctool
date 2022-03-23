@@ -6,6 +6,7 @@ from datetime import datetime
 from pyquery import PyQuery as pq
 from EpubCrawler.util import request_retry
 from EpubCrawler.img import process_img
+from concurrent.futures import ThreadPoolExecutor
 
 headers = {
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
@@ -87,6 +88,10 @@ def get_qids(html):
         for i in range(len(els))
     ]
 
+def download_safe(pid):
+    try: download(pid)
+    except Exception as ex: print(ex)
+
 def download(pid):
     fname = f'out/{pid}.html'
     if path.isfile(fname):
@@ -138,12 +143,26 @@ def download(pid):
         open(f'out/img/{iname}', 'wb').write(img)
     print('done')
 
-def fetch(st=None, ed=None):
+def batch(fname):
+    toc = open(fname).read().split('\n')
+    toc = [x.strip() for x in toc]
+    toc = filter(None, toc)
+    
+    pool = ThreadPoolExecutor(5)
+    hdls = []
+    for pid in toc:
+        hdl = pool.submit(download_safe, str(pid))
+        hdls.append(hdl)
+    for h in hdls: h.result()
+
+def fetch(fname, st=None, ed=None):
+    f = open(fname, 'w', encoding='utf8')
     url_tmpl = 'https://www.nowcoder.com/api/questiontraining/companyPaper/getCompanypaperList?orderByHotValue=3&jobId=0&pageSize=45&page={page}&filter=0&mutiTagIds='
     
     i = 1
     stop = False
     while not stop:
+        print(f'page: {i}')
         url = url_tmpl.replace('{page}', str(i))
         print(url)
         hdrs = headers.copy()
@@ -158,17 +177,23 @@ def fetch(st=None, ed=None):
                 stop = True
                 break
             pid = it['properties']['contentItemClick']['contentID_var']
-            download(str(pid))
+            f.write(str(pid) + '\n')
         i += 1
-
+        
+    f.close()
+    print('done')
+    
 def main():
     cmd = sys.argv[1]
     if cmd in ['download', 'dl']:
         download(sys.argv[2])
     elif cmd == 'fetch':
         fetch(
-            sys.argv[2] if len(sys.argv) > 2 else None,
+            sys.argv[2],
             sys.argv[3] if len(sys.argv) > 3 else None,
+            sys.argv[4] if len(sys.argv) > 4 else None,
         )
+    elif cmd == 'batch':
+        batch(sys.argv[2])
 
 if __name__ == '__main__': main()
