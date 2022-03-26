@@ -86,8 +86,9 @@ def download(id, to_audio=False):
         return
     tmp_fname = path.join(tempfile.gettempdir(), uuid.uuid4().hex + '.flv')
     open(tmp_fname, 'wb').write(video)
-    ac = VideoFileClip(tmp_fname).audio
-    ac.write_audiofile(fname)
+    vc = VideoFileClip(tmp_fname)
+    vc.audio.write_audiofile(fname)
+    vc.reader.close()
     os.unlink(tmp_fname)
     
 def main():
