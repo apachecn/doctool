@@ -68,6 +68,7 @@ def get_html(driver):
 # 获取文章列表
 def get_articles(html, qid):
     rt = pq(html)
+    rt.remove('noscript, .GifPlayer-icon')
     title = '知乎问答：' + rt('h1.QuestionHeader-title').eq(0).text()
     co = f'''
         <blockquote>来源：<a href='https://www.zhihu.com/question/{qid}'>https://www.zhihu.com/question/{qid}</a></blockquote>
@@ -76,7 +77,6 @@ def get_articles(html, qid):
     el_ansLi = rt('.AnswerItem')
     for i in range(len(el_ansLi)):
         el = el_ansLi.eq(i)
-        el.remove('noscript')
         el_au = el.find('.UserLink-link')
         au_name = el_au.text() or '匿名用户'
         au_url = el_au.attr('href') or ''
