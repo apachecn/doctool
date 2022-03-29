@@ -59,7 +59,7 @@ def get_html(driver):
 # 获取文章列表
 def get_articles(html, qid):
     rt = pq(html)
-    rt.remove('noscript, .GifPlayer-icon')
+    rt.remove('noscript, .GifPlayer-icon, a svg')
     title = '知乎问答：' + fname_escape(rt('h1.QuestionHeader-title').eq(0).text())
     co = f'''
         <blockquote>来源：<a href='https://www.zhihu.com/question/{qid}'>https://www.zhihu.com/question/{qid}</a></blockquote>
