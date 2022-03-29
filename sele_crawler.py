@@ -1,6 +1,7 @@
 from pyquery import PyQuery as pq
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.wait import WebDriverWait
 from EpubCrawler.util import opti_img
 from EpubCrawler.config import config
 from GenEpub import gen_epub
@@ -12,6 +13,8 @@ import hashlib
 import base64
 import time
 
+config['waitContent'] = None
+config['debug'] = False
 RE_DATA_URL = r'^data:image/\w+;base64,'
 
 JS_GET_IMG_B64 = '''
@@ -79,6 +82,45 @@ def process_img(driver, html, imgs, **kw):
         
     return root.html()
 
+def wait_content_cb(driver):
+    return driver.execute_script('''
+        var titlePresent = document.querySelector(arguments[0]) != null
+        var contPresent = document.querySelector(arguments[1]) != null
+        return titlePresent && contPresent
+    ''', config['title'], config['content'])
+
+def get_article(html, url):
+    root = pq(html)
+    title = root(config['title']).eq(0).text().replace('\n', '')
+    title = f'<h1>{title}</h1>'
+    el_co = root(config['content'])
+    co = '\n'.join([
+        el_co.eq(i).html() or ''
+        for i in range(len(el_co))
+    ])
+    co = "<blockquote>来源：<a href='" + url + "'>" + url + "</a></blockquote>\n" + co
+    return {'title': title, 'content': co}
+
+def download_page(driver, url, articles, imgs):
+    print(url)
+    if not re.search(r'^https?://', url):
+        articles.append({'title': url, 'content': ''})
+        return
+    driver.get(url)
+    # 显式等待
+    if config['waitContent']:
+        WebDriverWait(driver, config['waitContent'], 0.5) \
+            .until(wait_content_cb, "无法获取标题或内容")
+    html = driver.find_element_by_css_selector('body').get_attribute('outerHTML')
+    art = get_article(html, url)
+    art['content'] = process_img(driver, art['content'], imgs, page_url=url, img_prefix='../Images/')
+    articles.append(art)
+    time.sleep(config['wait'])
+
+def download_page_safe(driver, url, articles, imgs):
+    try: download_page(driver, url, articles, imgs)
+    except Exception as ex: print(ex)
+
 def main():
     
     config_fname = sys.argv[1] if len(sys.argv) > 1 else 'config.json'
@@ -86,7 +128,8 @@ def main():
     config.update(user_config)
     
     options = Options()
-    options.add_argument('--headless')
+    if not config['debug']:
+        options.add_argument('--headless')
     options.add_argument('--disable-gpu')
     options.add_argument('--log-level=3')
     driver = webdriver.Chrome(options=options)
@@ -98,35 +141,13 @@ def main():
         driver.add_cookie({'name': kv[0], 'value': kv[1]})
     driver.get(config['url'])
     
-    
     articles = [{
         'title': config['name'],
         'content': f"<p>来源：<a href='" + config['url'] + "'>" + config['url'] + "</a></p>"
     }]
     imgs = {}
-    
     for url in config['list']:
-        try:
-            print(url)
-            if not re.search(r'^https?://', url):
-                articles.append({'title': url, 'content': ''})
-                continue
-            driver.get(url)
-            html = driver.find_element_by_css_selector('body').get_attribute('outerHTML')
-            root = pq(html)
-            title = root(config['title']).eq(0).text().replace('\n', '')
-            title = f'<h1>{title}</h1>'
-            print(title)
-            el_co = root(config['content'])
-            co = '\n'.join([
-                el_co.eq(i).html()
-                for i in range(len(el_co))
-            ])
-            co = "<blockquote>来源：<a href='" + url + "'>" + url + "</a></blockquote>\n" + co
-            co = process_img(driver, co, imgs, page_url=url, img_prefix='../Images/')
-            articles.append({'title': title, 'content': co})
-            time.sleep(config['wait'])
-        except Exception as ex: print(ex)
+        download_page_safe(driver, url, articles, imgs)
     
     gen_epub(articles, imgs)
     driver.close()
