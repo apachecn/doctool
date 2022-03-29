@@ -52,6 +52,13 @@ def if_reach_bottom(driver):
         return document.querySelector('.QuestionAnswers-answerButton') != null
     ''')    
     
+# 获取最后一个 AID
+def get_last_aid(driver):
+    return driver.execute_script('''
+        var ansLi = document.querySelectorAll('.AnswerItem')
+        return (ansLi.length == 0)? '': ansLi[ansLi.length - 1].getAttribute('name')
+    ''')    
+    
 # 获取整个页面 HTML
 def get_html(driver):
     return driver.execute_script('''
@@ -71,7 +78,7 @@ def get_articles(html, qid):
         el = el_ansLi.eq(i)
         el.remove('noscript')
         el_au = el.find('.UserLink-link')
-        au_name = el_au.text()
+        au_name = el_au.text() or '知乎用户'
         au_url = el_au.attr('href')
         el_time = el.find('.ContentItem-time>a')
         co_url = el_time.attr('href')
@@ -112,8 +119,10 @@ def main():
     ''')
     # 如果没有到底就一直滚动
     while not if_reach_bottom(driver):
-        print(f'reach bottom: false')
+        last_aid = get_last_aid(driver)
+        print(f'reach bottom: false, last aid: {last_aid}')
         scroll_to_bottom(driver)
+        # time.sleep(1)
     
     html = get_html(driver)
     # time.sleep(3600)
