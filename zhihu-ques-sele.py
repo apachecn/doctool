@@ -19,25 +19,16 @@ UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like 
 def d(name):
     return path.join(DIR, name)
 
-def get_content(art):
-    au_name = art['author']['name']
-    au_url = 'https://www.zhihu.com/people/' + \
-        art['author']['url_token']
-    vote = art['voteup_count']
-    url = art['url'].replace('api/v4/answers', 'answer')
-    upd_time = datetime.utcfromtimestamp(art['updated_time']).strftime('%Y-%m-%d')
-    co = re.sub(r'<noscript>.+?</noscript>', '', art['content'])
-    co = re.sub(r' src=".+?"', '', co) \
-        .replace('data-actualsrc', 'src')
-    co = f'''
-        <blockquote>
-            <p>作者：<a href='{au_url}'>{au_name}</a></p>
-            <p>赞同数：{vote}</p>
-            <p>编辑于：<a href='{url}'>{upd_time}</a></p>
-        </blockquote>
-        {co}
-    '''
-    return {'title': au_name, 'content': co}
+def fname_escape(name):
+    return name.replace('\\', '＼') \
+               .replace('/', '／') \
+               .replace(':', '：') \
+               .replace('*', '＊') \
+               .replace('?', '？') \
+               .replace('"', '＂') \
+               .replace('<', '＜') \
+               .replace('>', '＞') \
+               .replace('|', '｜')
     
     
 # 滚动到底
@@ -69,7 +60,7 @@ def get_html(driver):
 def get_articles(html, qid):
     rt = pq(html)
     rt.remove('noscript, .GifPlayer-icon')
-    title = '知乎问答：' + rt('h1.QuestionHeader-title').eq(0).text()
+    title = '知乎问答：' + fname_escape(rt('h1.QuestionHeader-title').eq(0).text())
     co = f'''
         <blockquote>来源：<a href='https://www.zhihu.com/question/{qid}'>https://www.zhihu.com/question/{qid}</a></blockquote>
     '''
@@ -78,7 +69,7 @@ def get_articles(html, qid):
     for i in range(len(el_ansLi)):
         el = el_ansLi.eq(i)
         el_au = el.find('.UserLink-link')
-        au_name = el_au.text() or '匿名用户'
+        au_name = (el_au.text() or '匿名用户').strip()
         au_url = el_au.attr('href') or ''
         el_time = el.find('.ContentItem-time>a')
         co_url = el_time.attr('href')
