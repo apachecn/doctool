@@ -78,8 +78,8 @@ def get_articles(html, qid):
         el = el_ansLi.eq(i)
         el.remove('noscript')
         el_au = el.find('.UserLink-link')
-        au_name = el_au.text() or '知乎用户'
-        au_url = el_au.attr('href')
+        au_name = el_au.text() or '匿名用户'
+        au_url = el_au.attr('href') or ''
         el_time = el.find('.ContentItem-time>a')
         co_url = el_time.attr('href')
         vote = el.find('.VoteButton--up').attr('aria-label').strip()[3:]
