@@ -84,9 +84,12 @@ def process_img(driver, html, imgs, **kw):
 
 def wait_content_cb(driver):
     return driver.execute_script('''
-        var titlePresent = document.querySelector(arguments[0]) != null
-        var contPresent = document.querySelector(arguments[1]) != null
-        return titlePresent && contPresent
+        var $title = document.querySelector(arguments[0])
+        var title = $title? $title.innerText.trim(): ''
+        var $cont = document.querySelectorAll(arguments[1])
+        var cont = Array.from($cont).map(x => x.innerHTML).join('').trim()
+        console.log('title:', title, 'content:', cont)
+        return title != '' && cont != ''
     ''', config['title'], config['content'])
 
 def get_article(html, url):
