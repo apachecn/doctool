@@ -159,8 +159,8 @@ def main():
     dl_parser.add_argument("-c", "--category", default='未分类', help="category")
     dl_parser.set_defaults(func=download_handle)
     
-    dl_parser = subparsers.add_parser("summary", help="generate the summary")
-    dl_parser.set_defaults(func=summary_handle)
+    sum_parser = subparsers.add_parser("summary", help="generate the summary")
+    sum_parser.set_defaults(func=summary_handle)
     
     args = parser.parse_args()
     args.func(args)
