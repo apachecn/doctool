@@ -7,9 +7,11 @@ import subprocess as subp
 import re
 import os
 import json
+import yaml
 from os import path
 from pyquery import PyQuery as pq
 from datetime import datetime
+from collections import OrderedDict
 from EpubCrawler.img import process_img
 from EpubCrawler.util import safe_mkdir
 from EpubCrawler.config import config
@@ -113,6 +115,47 @@ def download_handle(args):
         
     print('已完成')
     
+def summary_handle(args):
+    # 读入文件列表
+    fnames = [f for f in os.listdir('docs') if f.endswith('.md')]
+    toc = OrderedDict()
+    for fname in fnames:
+        print(fname)
+        md = open(path.join('docs', fname), encoding='utf8').read()
+        # 提取元信息
+        m = re.search(r'<!--yml([\s\S]+?)-->', md)
+        if not m: 
+            print('未找到元信息，已跳过')
+            continue
+        try:
+            meta = yaml.safe_load(m.group(1))
+        except Exception as ex: 
+            print(ex)
+            continue
+        dt = meta.get('date', '0001-01-01 00:00:00')
+        cate = meta.get('category', '未分类')
+        # 提取标题
+        m = re.search(r'^#+ (.+?)$', md, flags=re.M)
+        if not m: 
+            print('未找到标题，已跳过')
+            continue
+        title = m.group(1)
+        toc.setdefault(cate, [])
+        toc[cate].append({
+            'title': title,
+            'file': fname,
+            'date': dt,
+        })
+    
+    # 生成目录文件
+    summary = ''
+    for cate, sub in toc.items():
+        summary += f'+   {cate}\n'
+        for art in sub:
+            title = art['title']
+            file = art['file']
+            summary += f'    +   [{title}](docs/{file})\n'
+    open('SUMMARY.md', 'w', encoding='utf8').write(summary)
     
 def main():
     parser = argparse.ArgumentParser(prog="BookerWikiTool", description="iBooker WIKI tool", formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -120,11 +163,14 @@ def main():
     parser.set_defaults(func=lambda x: parser.print_help())
     subparsers = parser.add_subparsers()
     
-    login_parser = subparsers.add_parser("download", help="download a page")
-    login_parser.add_argument("url", help="url")
-    login_parser.add_argument("-e", "--encoding", default='utf-8', help="encoding")
-    login_parser.add_argument("-c", "--category", default='未分类', help="category")
-    login_parser.set_defaults(func=download_handle)
+    dl_parser = subparsers.add_parser("download", help="download a page")
+    dl_parser.add_argument("url", help="url")
+    dl_parser.add_argument("-e", "--encoding", default='utf-8', help="encoding")
+    dl_parser.add_argument("-c", "--category", default='未分类', help="category")
+    dl_parser.set_defaults(func=download_handle)
+    
+    dl_parser = subparsers.add_parser("summary", help="generate the summary")
+    dl_parser.set_defaults(func=summary_handle)
     
     args = parser.parse_args()
     args.func(args)
