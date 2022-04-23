@@ -22,9 +22,8 @@ default_hdrs = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
 }
 
-RE_CODE_BLOCK = r'\[code\][\s\S]+?\[/code\]'
-RE_CODE_PRE = r'\[code\]\r?\n\x20*\r?\n'
-RE_CODE_SUF = r'\r?\n\x20*\r?\n(\x20*)\[/code\]'
+RE_YAML_META = r'<!--yml([\s\S]+?)-->'
+RE_TITLE = r'\.html$'
 
 def d(name):
     return path.join(DIR, name)
@@ -37,7 +36,7 @@ def tomd(html):
         ["node", js_fname, html_fname],
         shell=True,
     ).communicate()
-    md_fname = re.sub(r'\.html$', '', html_fname) + '.md'
+    md_fname = re.sub(RE_TITLE, '', html_fname) + '.md'
     md = open(md_fname, encoding='utf8').read()
     os.remove(html_fname)
     return md
@@ -52,15 +51,6 @@ def fname_escape(name):
                .replace('<', '＜') \
                .replace('>', '＞') \
                .replace('|', '｜')
-
-def code_replace_func(m):
-    s = m.group()
-    ind = re.search(RE_CODE_SUF, s).group(1)
-    code = re.sub(RE_CODE_PRE, '', s)
-    code = re.sub(RE_CODE_SUF, '', code)
-    code = re.sub(r'(?<=\n)\x20{4}', '', code)
-    code = re.sub(r'\A\x20{4}', '', code)
-    return f'```\n{code}\n{ind}```'
 
 def download_handle(args):
     html = requests.get(
@@ -123,7 +113,7 @@ def summary_handle(args):
         print(fname)
         md = open(path.join('docs', fname), encoding='utf8').read()
         # 提取元信息
-        m = re.search(r'<!--yml([\s\S]+?)-->', md)
+        m = re.search(RE_YAML_META, md)
         if not m: 
             print('未找到元信息，已跳过')
             continue
