@@ -5,6 +5,11 @@ import subprocess as subp
 import requests
 from datetime import datetime
 
+DOCKERFILE = '''
+FROM httpd:2.4
+COPY ./ /usr/local/apache2/htdocs/
+'''
+
 def get_latest_fix_ver(name, cur):
     now = datetime.now()
     cur = cur or \
@@ -35,7 +40,10 @@ def main():
         print('请提供文档目录')
         return
         
-    name = path.basename(dir)
+    if 'Dockerfile' not in fnames:
+        open(path.join(dir, 'Dockerfile'), 'w').write(DOCKERFILE)
+        
+    name = path.basename(dir).lower()
     now = datetime.now()
     ver = f'{now.year}.{now.month}.{now.day}.'
     fix_ver = get_latest_fix_ver(
