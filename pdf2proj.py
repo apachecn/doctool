@@ -83,7 +83,7 @@ def main():
     
     shutil.copy(fname, path.join(proj_dir, 'file.pdf'))
     open(path.join(proj_dir, 'index.html'), 'w', encoding='utf8').write(INDEX_HTML)
-    title = fname.replace('.pdf', '')
+    title = path.basename(fname).replace('.pdf', '')
     npm_name = npm_filter_name(name)
     README_MD = README_TMP \
         .replace('{title}', title) \
