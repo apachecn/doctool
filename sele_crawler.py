@@ -3,6 +3,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 from EpubCrawler.util import opti_img
+from EpubCrawler.img import process_img
 from EpubCrawler.config import config
 from GenEpub import gen_epub
 from urllib.parse import urljoin
@@ -31,12 +32,14 @@ function getImageBase64(img_stor) {
 }
 '''
 
+'''
 def get_img_src(el_img):
     url = ''
     for prop in config['imgSrc']:
         url = el_img.attr(prop)
         if url: break
     return url
+    
     
 def process_img_data_url(url, el_img, imgs, **kw):
     if not re.search(RE_DATA_URL, url):
@@ -81,15 +84,13 @@ def process_img(driver, html, imgs, **kw):
             except Exception as ex: print(ex)
         
     return root.html()
+'''
 
 def wait_content_cb(driver):
     return driver.execute_script('''
-        var $title = document.querySelector(arguments[0])
-        var title = $title? $title.innerText.trim(): ''
-        var $cont = document.querySelectorAll(arguments[1])
-        var cont = Array.from($cont).map(x => x.innerHTML).join('').trim()
-        console.log('title:', title, 'content:', cont)
-        return title != '' && cont != ''
+        var titlePresent = document.querySelector(arguments[0]) != null
+        var contPresent = document.querySelector(arguments[1]) != null
+        return titlePresent && contPresent
     ''', config['title'], config['content'])
 
 def get_article(html, url):
@@ -116,7 +117,7 @@ def download_page(driver, url, articles, imgs):
             .until(wait_content_cb, "无法获取标题或内容")
     html = driver.find_element_by_css_selector('body').get_attribute('outerHTML')
     art = get_article(html, url)
-    art['content'] = process_img(driver, art['content'], imgs, page_url=url, img_prefix='../Images/')
+    art['content'] = process_img(art['content'], imgs, page_url=url, img_prefix='../Images/')
     articles.append(art)
     time.sleep(config['wait'])
 
