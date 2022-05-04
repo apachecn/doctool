@@ -63,7 +63,7 @@ def gen_pdf(fname, dir):
     with open(fname, 'wb') as f:
         f.write(pdf)
 
-def process_img(img, size=1900, deskew=True):
+def process_img(img, size=0, deskew=False):
     # firstly deskew
     if deskew:
         img = magick_deskew(img)
@@ -141,7 +141,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("fname", help="pdf or dir name")
-    parser.add_argument("-s", "--size", type=int, default=1900, help="width of pics")
+    parser.add_argument("-s", "--size", type=int, default=0, help="width of pics")
     parser.add_argument("-d", "--deskew", action='store_true', help="deskew or not")
     args = parser.parse_args()
     
