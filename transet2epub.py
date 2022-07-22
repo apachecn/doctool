@@ -5,6 +5,7 @@ from pyquery import PyQuery as pq
 import sys
 from urllib.parse import urljoin
 from EpubCrawler.util import request_retry
+import re
 
 MARKDOWN_PANEL = '.markdown-body'
 
@@ -17,11 +18,19 @@ tmpl = {
     "proxy": "http://localhost:1080",
 }
 
+def get_level(url):
+    html = request_retry('GET', url).text
+    RE = r'阶段：(\S+?)（'
+    m = re.search(RE, html)
+    lv = '简单校对' if not m else m.group(1)
+    return lv
+
 def process_book(el_top, base):
     url = urljoin(base, el_top.attr('href'))
     print('url: ' + url)
+    lv = get_level(url)
     config = tmpl.copy()
-    config['name'] = el_top.text().strip()
+    config['name'] = el_top.text().strip() + f'（{lv}）'
     config['url'] = url.replace('README.md', 'SUMMARY.md')
     open('config.json', 'w', encoding='utf8') \
         .write(json.dumps(config))
