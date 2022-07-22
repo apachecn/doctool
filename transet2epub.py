@@ -18,8 +18,8 @@ tmpl = {
 }
 
 def process_book(el_top, base):
-    url = urljoin(el_top.attr('href'), base)
-    print(url)
+    url = urljoin(base, el_top.attr('href'))
+    print('url: ' + url)
     config = tmpl.copy()
     config['name'] = el_top.text().strip()
     config['url'] = url.replace('README.md', 'SUMMARY.md')
