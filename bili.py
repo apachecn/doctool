@@ -26,7 +26,20 @@ def fname_escape(name):
                .replace('|', '｜')
     
 
-def batch(kw, st, ed, to_audio=False):
+def batch_home(mid, st, ed, to_audio=False):
+    for i in range(st, ed + 1):
+        url = f'https://api.bilibili.com/x/web-interface/search/type?search_type=video&mid={mid}&page={i}&order=pubdate'
+        j = requests.get(url, headers=headers).json()
+        if j['code'] != 0:
+            print('解析失败：' + j['message'])
+            return
+        for it in j['data']['result']:
+            bv = it['bvid']
+            download_safe(bv, to_audio)
+            
+    print('bvid')
+
+def batch_kw(kw, st, ed, to_audio=False):
     kw_enco = quote_plus(kw)
     for i in range(st, ed + 1):
         url = f'https://api.bilibili.com/x/web-interface/search/type?search_type=video&keyword={kw_enco}&page={i}&order=pubdate'
@@ -97,14 +110,27 @@ def main():
         download(sys.argv[2])
     elif cmd in ['dlau', 'dlaudio']:
         download(sys.argv[2], True)
-    elif cmd == 'batch':
-        batch(
+    elif cmd == 'batchkw':
+        batch_kw(
             sys.argv[2],
             int(sys.argv[3]) if len(sys.argv) > 3 else 1,
             int(sys.argv[4]) if len(sys.argv) > 4 else 50,
         )
-    elif cmd == 'batchau':
-        batch(
+    elif cmd == 'batchkwau':
+        batch_kw(
+            sys.argv[2],
+            int(sys.argv[3]) if len(sys.argv) > 3 else 1,
+            int(sys.argv[4]) if len(sys.argv) > 4 else 50,
+            True,
+        )
+    elif cmd == 'batchhome':
+        batch_home(
+            sys.argv[2],
+            int(sys.argv[3]) if len(sys.argv) > 3 else 1,
+            int(sys.argv[4]) if len(sys.argv) > 4 else 50,
+        )
+    elif cmd == 'batchhomeau':
+        batch_home(
             sys.argv[2],
             int(sys.argv[3]) if len(sys.argv) > 3 else 1,
             int(sys.argv[4]) if len(sys.argv) > 4 else 50,
