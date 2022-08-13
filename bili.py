@@ -28,12 +28,12 @@ def fname_escape(name):
 
 def batch_home(mid, st, ed, to_audio=False):
     for i in range(st, ed + 1):
-        url = f'https://api.bilibili.com/x/web-interface/search/type?search_type=video&mid={mid}&page={i}&order=pubdate'
+        url = f'https://api.bilibili.com/x/space/arc/search?search_type=video&mid={mid}&pn={i}&order=pubdate'
         j = requests.get(url, headers=headers).json()
         if j['code'] != 0:
             print('解析失败：' + j['message'])
             return
-        for it in j['data']['result']:
+        for it in j['data']['list']['vlist']:
             bv = it['bvid']
             download_safe(bv, to_audio)
             
