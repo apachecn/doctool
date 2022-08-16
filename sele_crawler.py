@@ -13,10 +13,16 @@ import re
 import hashlib
 import base64
 import time
+from concurrent.futures import ThreadPoolExecutor
+import threading
+import traceback
 
 config['waitContent'] = None
 config['debug'] = False
 RE_DATA_URL = r'^data:image/\w+;base64,'
+
+trlocal = threading.local()
+drivers = []
 
 JS_GET_IMG_B64 = '''
 function getImageBase64(img_stor) {
@@ -105,8 +111,14 @@ def get_article(html, url):
     co = "<blockquote>来源：<a href='" + url + "'>" + url + "</a></blockquote>\n" + co
     return {'title': title, 'content': co}
 
-def download_page(driver, url, articles, imgs):
+def download_page(url, art, imgs):
     print(url)
+    
+    if not hasattr(trlocal, 'driver'):
+        trlocal.driver = create_driver()
+        drivers.append(trlocal.driver)
+    driver = trlocal.driver
+    
     if not re.search(r'^https?://', url):
         articles.append({'title': url, 'content': ''})
         return
@@ -116,21 +128,15 @@ def download_page(driver, url, articles, imgs):
         WebDriverWait(driver, config['waitContent'], 0.5) \
             .until(wait_content_cb, "无法获取标题或内容")
     html = driver.find_element_by_css_selector('body').get_attribute('outerHTML')
-    art = get_article(html, url)
+    art.update(get_article(html, url))
     art['content'] = process_img(art['content'], imgs, page_url=url, img_prefix='../Images/')
-    articles.append(art)
     time.sleep(config['wait'])
 
-def download_page_safe(driver, url, articles, imgs):
-    try: download_page(driver, url, articles, imgs)
-    except Exception as ex: print(ex)
+def download_page_safe(url, art, imgs):
+    try: download_page(url, art, imgs)
+    except: traceback.print_exc()
 
-def main():
-    
-    config_fname = sys.argv[1] if len(sys.argv) > 1 else 'config.json'
-    user_config = json.loads(open(config_fname, encoding='utf8').read())
-    config.update(user_config)
-    
+def create_driver():
     options = Options()
     if not config['debug']:
         options.add_argument('--headless')
@@ -145,15 +151,33 @@ def main():
         driver.add_cookie({'name': kv[0], 'value': kv[1]})
     driver.get(config['url'])
     
+    return driver
+    
+    
+def main():
+    
+    config_fname = sys.argv[1] if len(sys.argv) > 1 else 'config.json'
+    user_config = json.loads(open(config_fname, encoding='utf8').read())
+    config.update(user_config)
+    
     articles = [{
         'title': config['name'],
         'content': f"<p>来源：<a href='" + config['url'] + "'>" + config['url'] + "</a></p>"
     }]
     imgs = {}
+    pool = ThreadPoolExecutor(config['textThreads'])
+    hdls = []
     for url in config['list']:
-        download_page_safe(driver, url, articles, imgs)
+        art = {}
+        articles.append(art)
+        h = pool.submit(download_page_safe, url, art, imgs)
+        hdls.append(h)
+        # download_page_safe(driver, url, articles, imgs)
+    for h in hdls: h.result()
     
+    articles = [art for art in articles if art]
     gen_epub(articles, imgs)
-    driver.close()
+    
+    for d in drivers: d.close()
     
 if __name__ == '__main__': main()
