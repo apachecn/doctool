@@ -116,6 +116,7 @@ def main():
     options.add_argument(f'--user-agent={UA}')
     options.add_argument("--disable-blink-features=AutomationControlled")
     driver = webdriver.Chrome(options=options)
+    driver.set_script_timeout(1000)
     # StealthJS
     stealth = open(d('stealth.min.js')).read()
     driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
