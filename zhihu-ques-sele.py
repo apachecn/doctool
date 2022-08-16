@@ -1,6 +1,7 @@
 import re
 import sys
 import time
+import traceback
 from os import path
 from pyquery import PyQuery as pq
 from EpubCrawler.util import request_retry
@@ -48,7 +49,25 @@ def get_last_aid(driver):
     return driver.execute_script('''
         var ansLi = document.querySelectorAll('.AnswerItem')
         return (ansLi.length == 0)? '': ansLi[ansLi.length - 1].getAttribute('name')
-    ''')    
+    ''')   
+
+# 获取 AID 数量
+def get_aid_count(driver):
+    return driver.execute_script('''
+        var ansLi = document.querySelectorAll('.AnswerItem')
+        return ansLi.length
+    ''')  
+    
+# 获取回答数量
+def get_ans_count(driver):
+    return driver.execute_script('''
+        var el = document.querySelector('h4.List-headerText')
+        if (!el) return 0
+        var text = el.innerText.replace(',', '')
+        var m = /\d+/.exec(text)
+        if (!m) return 0
+        return Number.parseInt(m[0])
+    ''')  
     
 # 获取整个页面 HTML
 def get_html(driver):
@@ -108,12 +127,16 @@ def main():
         var cls_btn = document.querySelector('.Modal-closeButton')
         if (cls_btn) cls_btn.click()
     ''')
+    ansCnt = get_ans_count(driver)
     # 如果没有到底就一直滚动
     while not if_reach_bottom(driver):
-        last_aid = get_last_aid(driver)
-        print(f'reach bottom: false, last aid: {last_aid}')
-        scroll_to_bottom(driver)
-        # time.sleep(1)
+        try:
+            cnt = get_aid_count(driver)
+            print(f'reach bottom: false, count: {cnt}/{ansCnt}')
+            scroll_to_bottom(driver)
+            # time.sleep(1)
+        except:
+            traceback.print_exc()
     
     html = get_html(driver)
     # time.sleep(3600)
