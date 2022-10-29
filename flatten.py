@@ -1,4 +1,4 @@
-form os import path
+from os import path
 import sys
 import os
 
@@ -9,8 +9,8 @@ def main():
         return
         
     for rt, _, fnames in os.walk(dir):
-        rel_rt = rt[len(dir)+1:]
-        for fnames in fnames:
+        rel_rt = rt[len(dir):]
+        for fname in fnames:
             print(path.join(rel_rt, fname))
             nfname = (
                 path.join(rel_rt, fname)
