@@ -7,6 +7,10 @@ def main():
     if not path.isdir(dir):
         print('请提供目录！')
         return
+    
+    if not dir.endswith('/') and \
+       not dir.endswith('\\'):
+       dir += '/'
         
     for rt, _, fnames in os.walk(dir):
         rel_rt = rt[len(dir):]
