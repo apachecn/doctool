@@ -17,7 +17,7 @@ while q:
     rt = pq(html)
     el_links = rt('a')
     links = [
-        urljoin(site, el_links.eq(i).attr('href')) 
+        urljoin(url, el_links.eq(i).attr('href')) 
         for i in range(len(el_links))
     ]
     links = [
