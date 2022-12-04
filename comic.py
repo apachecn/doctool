@@ -19,7 +19,7 @@ import subprocess as subp
 from concurrent.futures import ThreadPoolExecutor
 from GenEpub import gen_epub
 from BookerWikiTool.util import fname_escape, safe_mkdir, safe_rmdir
-from EpubCrawler.util import request_retry
+from EpubCrawler.util import request_retry, safe_remove
 
 ch_pool = ThreadPoolExecutor(5)
 img_pool = ThreadPoolExecutor(5)
