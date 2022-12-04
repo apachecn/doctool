@@ -3,18 +3,23 @@ from os import path
 import shutil
 import requests
 from pyquery import PyQuery as pq
+from imgyaso import pngquant_bts, \
+    adathres_bts, grid_bts, noise_bts, trunc_bts, noisebw_bts
 import execjs
+import traceback
 import sys
 import cv2
 import numpy as np
 import re
-from imgyaso import grid
 import tempfile
 import json
 import uuid
+import img2pdf
 import subprocess as subp
 from concurrent.futures import ThreadPoolExecutor
 from GenEpub import gen_epub
+from BookerWikiTool.util import fname_escape, safe_mkdir, safe_rmdir
+from EpubCrawler.util import request_retry
 
 ch_pool = ThreadPoolExecutor(5)
 img_pool = ThreadPoolExecutor(5)
@@ -25,31 +30,7 @@ headers = {
 }
 
 d = lambda name: path.join(path.dirname(__file__, name))
-
-def fname_escape(name):
-    return name.replace('\\', '＼') \
-               .replace('/', '／') \
-               .replace(':', '：') \
-               .replace('*', '＊') \
-               .replace('?', '？') \
-               .replace('"', '＂') \
-               .replace('<', '＜') \
-               .replace('>', '＞') \
-               .replace('|', '｜')
     
-    
-    
-def request_retry(method, url, retry=10, **kw):
-    kw.setdefault('timeout', 10)
-    for i in range(retry):
-        try:
-            return requests.request(method, url, **kw)
-        except KeyboardInterrupt as e:
-            raise e
-        except Exception as e:
-            print(f'{url} retry {i}')
-            if i == retry - 1: raise e
-            
 def load_existed():
     exi = []
     fname = 'dmzj_existed.json'
@@ -80,31 +61,20 @@ def get_article(html):
     else: pics = None
     return {'title': fname_escape(title), 'ch': fname_escape(ch), 'pics': pics}
     
-def safe_mkdir(dir):
-    try: os.mkdir(dir)
-    except: pass
-    
-def safe_rmdir(dir):
-    try: shutil.rmtree(dir)
-    except: pass
         
-def process_img(img, l=4):
-    img = np.frombuffer(img, np.uint8)
-    img = cv2.imdecode(img, cv2.IMREAD_GRAYSCALE)
-    
-    h, w = img.shape
-    if w > h: img = img.T[::-1]
-    
-    h, w = img.shape
-    if w > 1000:
-        rate = 1000 / w
-        nh = round(h * rate)
-        img = cv2.resize(img, (1000, nh), interpolation=cv2.INTER_CUBIC)
-    
-    
-    img = grid(img)
-    img = cv2.imencode('.png', img, [cv2.IMWRITE_PNG_COMPRESSION, 9])[1]
-    return bytes(img)
+def process_img(img):
+    return noisebw_bts(trunc_bts(waifu2x_auto(img), 4))
+
+def waifu2x_auto(img):
+    fname = path.join(tempfile.gettempdir(), uuid.uuid4().hex + '.png')
+    open(fname, 'wb').write(img)
+    subp.Popen(
+        ['wiki-tool', 'waifu2x-auto', fname], 
+        shell=True,
+    ).communicate()
+    img = open(fname, 'rb').read()
+    safe_remove(fname)
+    return img
     
 def tr_download_img(url, imgs, k):
     print(f'pic: {url}')
@@ -114,7 +84,7 @@ def tr_download_img(url, imgs, k):
     
 def download_ch_safe(url, info):
     try: download_ch(url, info)
-    except Exception as ex: print(ex)
+    except Exception as ex: traceback.print_exc()
     
 def download_ch(url, info):
     print(f'ch: {url}')
@@ -125,7 +95,7 @@ def download_ch(url, info):
         return
         
     name = f"{art['title']} - {info['author']} - {art['ch']}"
-    ofname = f'out/{name}.epub'
+    ofname = f'out/{name}.pdf'
     if name in existed or path.exists(ofname):
         print('文件已存在')
         return
@@ -138,14 +108,13 @@ def download_ch(url, info):
         hdls.append(hdl)
     for h in hdls:
         h.result()
-        
-    co = '\r\n'.join([
-        f"<p><img src='../Images/{i}.png' width='100%' /></p>"
+       
+    img_list = [
+        imgs.get(f'{i}.png', b'')
         for i in range(len(imgs))
-    ])
-    articles = [{'title': f"{art['title']} - {art['ch']}", 'content': co}]
-    gen_epub(articles, imgs, None, ofname)
-    
+    ]
+    pdf = img2pdf.convert(img_list)
+    open(ofname, 'wb').write(pdf)
     
 def download(id, block=True):
     url = f'http://manhua.dmzj.com/{id}/'
@@ -171,7 +140,7 @@ def download_safe(id, block=True):
     try: 
         return download(id, block)
     except Exception as ex: 
-        print(ex)
+        traceback.print_exc()
         return []
         
 def batch(fname):
@@ -249,6 +218,5 @@ def main():
     if cmd == 'download' or cmd == 'dl': download(arg)
     elif cmd == 'batch': batch(arg)
     elif cmd == 'fetch': fetch(arg, sys.argv[3], sys.argv[4])
-    elif cmd == 'pack': pack(arg)
     
 if __name__ == '__main__': main()
