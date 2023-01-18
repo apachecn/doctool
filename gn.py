@@ -127,13 +127,16 @@ def download_art(url, articles, imgs, cookie):
             'content': c
         })
      
-def get_info_by_tid(tid, cookie):
+def get_info_by_tid(tid, is_all, cookie):
     hdrs = default_hdrs.copy()
     hdrs['Cookie'] = cookie
-    url = f'https://{host}/gnforum2012/forum.php?mod=viewthread&tid={tid}'
-    html = request_retry('GET', url, headers=hdrs, proxies=pr).text
-    uid = get_uid(html)
-    if not uid: return
+    if is_all:
+        uid = "0"
+    else:
+        url = f'https://{host}/gnforum2012/forum.php?mod=viewthread&tid={tid}'
+        html = request_retry('GET', url, headers=hdrs, proxies=pr).text
+        uid = get_uid(html)
+        if not uid: return
     url = f'https://{host}/gnforum2012/forum.php?mod=viewthread&tid={tid}&page=1000000&authorid={uid}'
     html = request_retry('GET', url, headers=hdrs, proxies=pr).text
     info = get_info(html)
@@ -146,7 +149,7 @@ def download_split(args):
     try: os.mkdir('out')
     except: pass
      
-    info = get_info_by_tid(tid, cookie)
+    info = get_info_by_tid(tid, args.all, cookie)
     if not info:
         print(f'{tid} 不存在')
         return
@@ -197,7 +200,7 @@ def download(args):
     try: os.mkdir('out')
     except: pass
  
-    info = get_info_by_tid(tid, cookie)
+    info = get_info_by_tid(tid, args.all,cookie)
     if not info:
         print(f'{tid} 不存在')
         return
@@ -300,6 +303,7 @@ def main():
     dl_parser.add_argument("-s", "--start", help="staring date")
     dl_parser.add_argument("-e", "--end", help="ending date")
     dl_parser.add_argument("-c", "--cookie", default=load_cookie(), help="gn cookie")
+    dl_parser.add_argument("-a", "--all", action='store_true', help="whether to crawl all replies")
     dl_parser.add_argument("-l", "--existed-list", default='gn_existed.json', help="existed fnames JSON")
     dl_parser.set_defaults(func=download)
 
@@ -318,6 +322,7 @@ def main():
     batch_parser.add_argument("-e", "--end", help="ending date")
     batch_parser.add_argument("-c", "--cookie", default=load_cookie(), help="gn cookie")
     batch_parser.add_argument("-t", "--threads", type=int, default=8, help="num of threads")
+    batch_parser.add_argument("-a", "--all", action='store_true', help="whether to crawl all replies")
     batch_parser.add_argument("-l", "--existed-list", default='gn_existed.json', help="existed fnames JSON")
     batch_parser.set_defaults(func=batch)
 
