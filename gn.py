@@ -113,7 +113,7 @@ def md5(s):
      
 def download_art(url, articles, imgs, cookie):
     hdrs = default_hdrs.copy()
-    hdrs['Cookie'] = args.cookie
+    hdrs['Cookie'] = cookie
     html = request_retry('GET', url, headers=hdrs, proxies=pr).text
     contents = get_contents(html)
     for c in contents:
@@ -216,7 +216,7 @@ def download(args):
         info['author'],
         info['time'],
     ])
-    existed = load_existed(args.existed) 
+    existed = load_existed(args.existed_list) 
     if name in existed:
         print('已存在')
         return
@@ -262,6 +262,8 @@ def batch(args):
 def fetch(args):
     fname, fid, st, ed = args.fname, args.fid, args.start, args.end
     f = open(fname, 'a', encoding='utf-8')
+    hdrs = default_hdrs.copy()
+    hdrs['Cookie'] = args.cookie
     for i in range(st, ed + 1):
         print(f'page: {i}')
         url = f'https://{host}/gnforum2012/forum.php?mod=forumdisplay&fid={fid}&page={i}'
@@ -269,6 +271,7 @@ def fetch(args):
         tids = get_tids(html)
         if len(tids) == 0: break
         for t in tids:
+            print(t)
             f.write(t + '\n')
             f.flush()
          
