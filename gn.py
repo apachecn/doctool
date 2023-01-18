@@ -78,7 +78,7 @@ def get_info(html):
     return {
         'title': fname_escape(title),
         'pages': pages,
-        'author': author,
+        'author': fname_escape(author),
     }
      
 def get_uid(html):
@@ -88,8 +88,10 @@ def get_uid(html):
  
 def get_last_time(html):
     root = pq(html)
-    time_str = root(selectors['time']).eq(-1).html()
-    time_str = re.search(r'\d+\-\d+\-\d+', time_str).group()
+    time_str = root(selectors['time']).eq(-1).html() or ''
+    m = re.search(r'\d+\-\d+\-\d+', time_str)
+    if not m: return 'UNKNOWN'
+    time_str = m.group()
     time_str = ''.join([
         s.zfill(2)
         for s in time_str.split('-')
