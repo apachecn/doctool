@@ -41,8 +41,6 @@ selectors = {
     'uid': 'dd a.xi2',
     'link': '[id^=normalthread] a.xst',
 }
-
-ch_split = False
  
 load_cookie = lambda: os.environ.get('GN_COOKIE', '')
  
@@ -145,60 +143,13 @@ def get_info_by_tid(tid, is_all, cookie):
     info['uid'] = uid
     info['time'] = get_last_time(html)
     return info
-     
-def download_split(args):
-    tid, cookie = args.tid, args.cookie
-    try: os.mkdir('out')
-    except: pass
-     
-    info = get_info_by_tid(tid, args.all, cookie)
-    if not info:
-        print(f'{tid} 不存在')
-        return
-    uid = info['uid']
-    tm = info['time']
-    if args.start and tm < args.start:
-        print(f'日期 {tm} 小于起始日期 {args.start}')
-        return
-    if args.end and tm > args.end:
-        print(f'日期 {tm} 大于终止日期 {args.end}')
-        return
-    print(f"tid: {tid}, title: {info['title']}, time: {info['time']}")
-    
-    for i in range(1, info['pages'] + 1):
-        print(f'page: {i}')
-        name = ' - '.join([
-            info['title'],
-            info['author'],
-            info['time'],
-            f'pt{i}'
-        ])
-        if name in existed:
-            print('已存在')
-            return
-        p = f"out/{name}.epub"
-        if path.exists(p):
-            print('已存在')
-            continue
-        articles = [{
-            'title': info['title'] + f' - pt{i}',
-            'content': f'<p>作者：{info["author"]}</p><p>TID：{tid}</p>'
-        }]
-        imgs = {}
-        url = f'https://{host}/gnforum2012/forum.php?mod=viewthread&tid={tid}&page={i}&authorid={uid}'
-        download_art(url, articles, imgs, cookie)
-        gen_epub(articles, imgs, None, p)
-     
+
 def download_safe(args):
     try: download(args)
     except: traceback.print_exc()
      
 def download(args):
-    tid, ch_split, cookie = args.tid, args.split, args.cookie
-    if ch_split: 
-        download_split(args)
-        return
-
+    tid, cookie = args.tid, args.cookie
     try: os.mkdir('out')
     except: pass
  
@@ -222,11 +173,13 @@ def download(args):
         info['time'],
     ])
     existed = load_existed(args.existed_list) 
-    if name in existed:
+    if name in existed or \
+       f"{name} - pt1" in existed:
         print('已存在')
         return
     p = f"out/{name}.epub"
-    if path.exists(p):
+    if path.exists(p) or \
+       path.exists(f"out/{name} - pt1.epub"):
         print('已存在')
         return
      
@@ -240,7 +193,53 @@ def download(args):
         url = f'https://{host}/gnforum2012/forum.php?mod=viewthread&tid={tid}&page={i}&authorid={uid}'
         download_art(url, articles, imgs, cookie)
      
-    gen_epub(articles, imgs, None, p)
+    total = sum(len(v) for _, v in imgs.items())
+    hecto_mb = 100 * 1024 * 1024
+    if total >= hecto_mb:
+        size = total // hecto_mb
+        gen_epub_paging(articles[1:], imgs, tid, info, existed, name, size)
+    else:
+        gen_epub(articles, imgs, None, p)
+ 
+def gen_epub_paging(articles, imgs, tid, info, existed, name, size):
+    hecto_mb = 100 * 1024 * 1024
+    art_part = []
+    img_part = {}
+    total = 0
+    ipt = 1
+    for a in articles:
+        art_imgs = re.findall(r'src="\.\./Images/(\w{32}\.png)"', a['content'])
+        size = sum(
+            len(imgs.get(iname, b'')) 
+            for iname in art_imgs
+        )
+        if total + size >= hecto_mb:
+            name_part = f'{name} - pt{ipt}'
+            p = f'out/{name_part}.epub'
+            art_part.insert(0, {
+                'title': info['title'] + f' - pt{ipt}',
+                'content': f'<p>作者：{info["author"]}</p><p>TID：{tid}</p>'
+            })
+            gen_epub(art_part, img_part, None, p)
+            art_part = []
+            img_part = {}
+            total = 0
+            ipt += 1
+        art_part.append(a)
+        img_part.update({
+            iname:imgs.get(iname, b'') 
+            for iname in art_imgs
+        })
+        total += size
+    if art_part:
+        name_part = f'{name} - pt{ipt}'
+        p = f'out/{name_part}.epub'
+        art_part.insert(0, {
+            'title': info['title'] + f' - pt{ipt}',
+            'content': f'<p>作者：{info["author"]}</p><p>TID：{tid}</p>'
+        })
+        gen_epub(art_part, img_part, None, p)
+    
  
 def get_tids(html):
     root = pq(html)
@@ -301,7 +300,6 @@ def main():
     
     dl_parser = subparsers.add_parser("dl", help="download a page")
     dl_parser.add_argument("tid", help="tid")
-    dl_parser.add_argument("-S", "--split", action='store_true', help="whether to split ch")
     dl_parser.add_argument("-s", "--start", help="staring date")
     dl_parser.add_argument("-e", "--end", help="ending date")
     dl_parser.add_argument("-c", "--cookie", default=load_cookie(), help="gn cookie")
@@ -319,7 +317,6 @@ def main():
 
     batch_parser = subparsers.add_parser("batch", help="batch download")
     batch_parser.add_argument("fname", help="fname")
-    batch_parser.add_argument("-S", "--split", action='store_true', help="whether to split ch")
     batch_parser.add_argument("-s", "--start", help="staring date")
     batch_parser.add_argument("-e", "--end", help="ending date")
     batch_parser.add_argument("-c", "--cookie", default=load_cookie(), help="gn cookie")
