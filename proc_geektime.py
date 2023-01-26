@@ -31,10 +31,12 @@ def get_article(html):
         el.attr('src', el.attr('data-savepage-src'))
     '''
     title = rt('h1').eq(0).text().strip()
+    '''
     style = '\n'.join([
         pq(el).html()
         for el in rt('style')
     ])
+    '''
     rt('style').remove()
     cont = rt('[data-slate-editor="true"], ._29HP61GA_0').eq(0).html()
     return {
