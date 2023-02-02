@@ -21,8 +21,8 @@ from GenEpub import gen_epub
 from BookerWikiTool.util import fname_escape, safe_mkdir, safe_rmdir
 from EpubCrawler.util import request_retry, safe_remove
 
-ch_pool = ThreadPoolExecutor(5)
-img_pool = ThreadPoolExecutor(5)
+ch_pool = ThreadPoolExecutor(16)
+img_pool = ThreadPoolExecutor(16)
 
 headers = {
     'Referer': 'http://manhua.dmzj.com/',
@@ -63,13 +63,13 @@ def get_article(html):
     
         
 def process_img(img):
-    return noisebw_bts(trunc_bts(waifu2x_auto(img), 4))
+    return noisebw_bts(trunc_bts(anime4k_auto(img), 4))
 
-def waifu2x_auto(img):
+def anime4k_auto(img):
     fname = path.join(tempfile.gettempdir(), uuid.uuid4().hex + '.png')
     open(fname, 'wb').write(img)
     subp.Popen(
-        ['wiki-tool', 'waifu2x-auto', fname], 
+        ['wiki-tool', 'anime4k-auto', fname, '-G'], 
         shell=True,
     ).communicate()
     img = open(fname, 'rb').read()
